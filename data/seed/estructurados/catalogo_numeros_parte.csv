@@ -1,0 +1,10 @@
+numero_parte,tipo,descripcion,variante,cliente,confidencialidad,terminales_familia_A,terminales_familia_B,cables
+B3-FDH-0451,Arnés,"Arnés de puerta delantera, variante Base",Base,Kestrel Modules,interno,26,6,WIR-050 WIR-075 WIR-100
+A7-DRH-2210-M,Arnés,"Arnés de puerta delantera, variante Media",Media,Norvane Motors,confidencial,32,8,WIR-035 WIR-075 WIR-100
+A7-DRH-2210-H,Arnés,"Arnés de puerta delantera, variante Alta",Alta,Norvane Motors,confidencial,38,10,WIR-035 WIR-075 WIR-100
+TRM-A-1064,Terminal,"Terminal hembra 0.64 mm, estañada",,,interno,,,
+TRM-B-2150,Terminal,"Terminal hembra 1.5 mm, estañada",,,interno,,,
+WIR-035,Cable,Cable automotriz 0.35 mm²,,,interno,,,
+WIR-050,Cable,Cable automotriz 0.5 mm²,,,interno,,,
+WIR-075,Cable,Cable automotriz 0.75 mm²,,,interno,,,
+WIR-100,Cable,Cable automotriz 1.0 mm²,,,interno,,,

@@ -1,0 +1,3 @@
+cliente_id,nombre,tipo,confidencialidad
+NOR,Norvane Motors,OEM,confidencial
+KES,Kestrel Modules,Tier 1,interno

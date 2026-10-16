@@ -1,0 +1,21 @@
+-- =====================================================================
+-- 0006_role_inspector.sql: rol 'inspector'
+--
+-- Cuatro roles con responsabilidades distintas:
+--   inspector  piso de produccion: inspecciona, evalua resultados y reporta.
+--   ingeniero  analiza lo reportado y disena y ajusta los planes de calidad.
+--   gerente    nivel administrativo del departamento; aprueba.
+--   auditor    solo lectura de la trazabilidad.
+--
+-- Va antes de 'ingeniero' para que ORDER BY role (el selector de demo)
+-- siga el orden del piso hacia arriba.
+--
+-- Las reglas de section_version_rules no cambian: solo un 'ingeniero' edita
+-- y solo un 'gerente' aprueba, asi que el inspector no puede ni una cosa ni
+-- la otra. Si puede abrir NCRs o ver borradores lo decide la capa de la API.
+--
+-- ADD VALUE no se puede usar en la misma transaccion en que se agrega; aqui
+-- solo se agrega.
+-- =====================================================================
+
+ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'inspector' BEFORE 'ingeniero';

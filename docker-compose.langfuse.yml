@@ -1,0 +1,145 @@
+# Langfuse v4 self-hosted (observabilidad). Perfil opcional: make observability
+#
+# Basado en el docker-compose.yml oficial de Langfuse, con estos cambios:
+#   - Servicios con prefijo langfuse- para no chocar con db, api y web.
+#   - Secretos en .env.langfuse (no en .env): la API solo recibe las dos llaves
+#     del proyecto, no las credenciales de ClickHouse, Redis, MinIO ni Postgres.
+#   - Solo se publican la UI (127.0.0.1:3001) y MinIO (127.0.0.1:9090, necesario
+#     para las URLs prefirmadas de media). El resto queda dentro de la red.
+#   - TELEMETRY_ENABLED=false: Langfuse no reporta uso a sus servidores.
+#   - Sin las variables vacias de funciones que no usamos (agente integrado,
+#     Bedrock/Vertex, Azure/OCI, SMTP, exportacion por lotes).
+#   - Healthcheck de Redis con autenticacion (el oficial hace ping sin clave).
+#   - Proyecto, organizacion y usuario administrador creados al primer arranque
+#     (LANGFUSE_INIT_*): la API puede enviar trazas sin configurar nada en la UI.
+#
+# Las imagenes usan las etiquetas del compose oficial (langfuse :4 es una etiqueta
+# mayor, no una version fija). Para reproducibilidad exacta, fija la version.
+
+x-langfuse-service: &langfuse-service
+  restart: unless-stopped
+  profiles: ["observability"]
+  env_file: .env.langfuse
+
+x-langfuse-env: &langfuse-env
+  NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3001}
+  TELEMETRY_ENABLED: "false"
+  CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+  CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+  CLICKHOUSE_CLUSTER_ENABLED: "false"
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  REDIS_HOST: langfuse-redis
+  REDIS_PORT: "6379"
+
+services:
+  langfuse-worker:
+    <<: *langfuse-service
+    image: docker.langfuse.com/langfuse/langfuse-worker:4
+    depends_on: &langfuse-depends-on
+      langfuse-postgres:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+      langfuse-redis:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+    environment: *langfuse-env
+
+  langfuse-web:
+    <<: *langfuse-service
+    image: docker.langfuse.com/langfuse/langfuse:4
+    depends_on: *langfuse-depends-on
+    ports:
+      - "127.0.0.1:${LANGFUSE_PORT:-3001}:3000"
+    environment:
+      <<: *langfuse-env
+      # El navegador sube media con URLs prefirmadas: necesita el MinIO publicado.
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:9090
+      LANGFUSE_S3_MEDIA_UPLOAD_INTERNAL_ENDPOINT: http://langfuse-minio:9000
+      # Se crean solo al primer arranque con base vacia. Las llaves vienen de .env
+      # y son las mismas que usa la API (LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY).
+      LANGFUSE_INIT_ORG_ID: arnes-8d
+      LANGFUSE_INIT_ORG_NAME: Arnes 8D
+      LANGFUSE_INIT_PROJECT_ID: agente-8d
+      LANGFUSE_INIT_PROJECT_NAME: Agente 8D
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_INIT_USER_EMAIL: admin@example.com
+      LANGFUSE_INIT_USER_NAME: Admin
+      # LANGFUSE_INIT_USER_PASSWORD viene de .env.langfuse
+
+  langfuse-clickhouse:
+    <<: *langfuse-service
+    image: docker.io/clickhouse/clickhouse-server:25.12
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+
+  langfuse-minio:
+    <<: *langfuse-service
+    image: cgr.dev/chainguard/minio
+    entrypoint: sh
+    # Crea el bucket 'langfuse' antes de iniciar el servicio
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    ports:
+      - "127.0.0.1:9090:9000"
+    volumes:
+      - langfuse_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+
+  langfuse-redis:
+    <<: *langfuse-service
+    image: docker.io/redis:7
+    command: sh -c 'exec redis-server --requirepass "$$REDIS_AUTH" --maxmemory-policy noeviction'
+    volumes:
+      - langfuse_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_AUTH\" --no-auth-warning ping | grep -q PONG"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
+  langfuse-postgres:
+    <<: *langfuse-service
+    image: docker.io/postgres:17
+    environment:
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  langfuse_postgres_data:
+  langfuse_clickhouse_data:
+  langfuse_clickhouse_logs:
+  langfuse_minio_data:
+  langfuse_redis_data:

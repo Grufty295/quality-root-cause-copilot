@@ -1,0 +1,13 @@
+defecto_codigo,descripcion,estacion_origen_tipica
+DEF-01,Falso contacto intermitente,CRP
+DEF-02,Alta resistencia de contacto,CRP
+DEF-03,Circuito abierto,INS
+DEF-04,Terminal no asentada o retraída (back-out),INS
+DEF-05,Altura de crimpado fuera de especificación,CRP
+DEF-06,Aislamiento atrapado en barril conductor,CUT
+DEF-07,Ruteo incorrecto o conector fuera de posición,BRD
+DEF-08,Daño de aislamiento,BRD
+DEF-09,Encintado deficiente,BRD
+DEF-10,Etiqueta incorrecta,EMP
+DEF-11,Longitud de ramal fuera de especificación,BRD
+DEF-12,Clip o abrazadera faltante,BRD

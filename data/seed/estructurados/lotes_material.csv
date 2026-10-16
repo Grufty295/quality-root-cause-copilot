@@ -1,0 +1,32 @@
+lote_id,numero_parte,familia,proveedor_id,proveedor,fecha_recepcion,cantidad,tipo_inspeccion,resultado_inspeccion,consumo_desde,consumo_hasta,estado
+LT-A-2603-01,TRM-A-1064,A,PRV-01,Vértice Conectores,2026-03-23,150000,Certificado (skip-lot),Liberado,2026-03-27,2026-04-10,Consumido
+LT-A-2604-02,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-04-09,200000,Certificado (skip-lot),Liberado,2026-04-11,2026-04-19,Consumido
+LT-A-2604-03,TRM-A-1064,A,PRV-01,Vértice Conectores,2026-04-17,200000,Certificado (skip-lot),Liberado,2026-04-20,2026-05-01,Consumido
+LT-A-2604-04,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-04-28,150000,Certificado (skip-lot),Liberado,2026-05-02,2026-05-14,Consumido
+LT-A-2605-05,TRM-A-1064,A,PRV-01,Vértice Conectores,2026-05-13,200000,Certificado (skip-lot),Liberado,2026-05-15,2026-05-31,Consumido
+LT-A-2605-06,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-05-28,200000,Certificado (skip-lot),Liberado,2026-06-01,2026-06-19,Consumo detenido el 2026-06-19; remanente en cuarentena y devuelto (SCAR-2026-007)
+LT-A-2606-07,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-06-17,150000,Muestreo reforzado 32 piezas (SCAR-2026-007),Liberado,2026-06-20,2026-07-04,Consumido
+LT-A-2606-08,TRM-A-1064,A,PRV-01,Vértice Conectores,2026-06-29,250000,Certificado (skip-lot),Liberado,2026-07-05,2026-07-16,Consumido
+LT-A-2607-09,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-07-14,200000,Muestreo reforzado 32 piezas (SCAR-2026-007),Liberado,2026-07-17,2026-07-25,Consumido
+LT-A-2607-10,TRM-A-1064,A,PRV-01,Vértice Conectores,2026-07-24,200000,Certificado (skip-lot),Liberado,2026-07-26,2026-08-05,Consumido
+LT-A-2608-11,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-08-04,150000,Muestreo reforzado 32 piezas (SCAR-2026-007),Liberado,2026-08-06,2026-08-14,Consumido
+LT-A-2608-12,TRM-A-1064,A,PRV-01,Vértice Conectores,2026-08-11,150000,Certificado (skip-lot),Liberado,2026-08-15,2026-08-27,Consumido
+LT-A-2608-13,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-08-23,200000,Certificado (skip-lot),Liberado,2026-08-28,2026-09-08,Consumido
+LT-A-2609-14,TRM-A-1064,A,PRV-01,Vértice Conectores,2026-09-05,200000,Certificado (skip-lot),Liberado,2026-09-09,2026-09-19,Consumido
+LT-A-2609-15,TRM-A-1064,A,PRV-02,Conexa Terminales,2026-09-16,200000,Certificado (skip-lot),Liberado,2026-09-20,2026-09-30,En consumo
+LT-B-2603-01,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-03-24,40000,Certificado (skip-lot),Liberado,2026-03-27,2026-04-05,Consumido
+LT-B-2604-02,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-04-04,40000,Certificado (skip-lot),Liberado,2026-04-06,2026-04-18,Consumido
+LT-B-2604-03,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-04-15,40000,Certificado (skip-lot),Liberado,2026-04-19,2026-05-03,Consumido
+LT-B-2605-04,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-05-01,50000,Certificado (skip-lot),Liberado,2026-05-04,2026-05-14,Consumido
+LT-B-2605-05,TRM-B-2150,B,PRV-01,Vértice Conectores,2026-05-11,40000,Certificado (skip-lot),Liberado,2026-05-15,2026-05-23,Consumido
+LT-B-2605-06,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-05-18,50000,Certificado (skip-lot),Liberado,2026-05-24,2026-06-04,Consumido
+LT-B-2606-07,TRM-B-2150,B,PRV-01,Vértice Conectores,2026-06-02,50000,Certificado (skip-lot),Liberado,2026-06-05,2026-06-18,Consumido
+LT-B-2606-08,TRM-B-2150,B,PRV-01,Vértice Conectores,2026-06-14,60000,Certificado (skip-lot),Liberado,2026-06-19,2026-07-03,Consumido
+LT-B-2606-09,TRM-B-2150,B,PRV-01,Vértice Conectores,2026-06-29,40000,Certificado (skip-lot),Liberado,2026-07-04,2026-07-15,Consumido
+LT-B-2607-10,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-07-14,40000,Certificado (skip-lot),Liberado,2026-07-16,2026-07-25,Consumido
+LT-B-2607-11,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-07-22,60000,Certificado (skip-lot),Liberado,2026-07-26,2026-08-04,Consumido
+LT-B-2608-12,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-08-02,40000,Certificado (skip-lot),Liberado,2026-08-05,2026-08-15,Consumido
+LT-B-2608-13,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-08-12,50000,Certificado (skip-lot),Liberado,2026-08-16,2026-08-29,Consumido
+LT-B-2608-14,TRM-B-2150,B,PRV-01,Vértice Conectores,2026-08-28,50000,Certificado (skip-lot),Liberado,2026-08-30,2026-09-10,Consumido
+LT-B-2609-15,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-09-09,50000,Certificado (skip-lot),Liberado,2026-09-11,2026-09-26,Consumido
+LT-B-2609-16,TRM-B-2150,B,PRV-02,Conexa Terminales,2026-09-22,40000,Certificado (skip-lot),Liberado,2026-09-27,2026-09-30,En consumo

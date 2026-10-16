@@ -1,0 +1,90 @@
+name: arnes-8d
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD. Ejecuta "make init" y revisa .env}
+      POSTGRES_DB: ${POSTGRES_DB:-eightd}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Los scripts de initdb solo corren al crear el volumen por primera vez.
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build:
+      context: ./apps/api
+      args:
+        GIT_SHA: ${GIT_SHA:-}
+        UV_EXTRA_GROUPS: ${UV_EXTRA_GROUPS:-}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Se arma aqui para no duplicar la contrasena en .env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-eightd}
+      # data/ y evals/ viven fuera del contexto de build de la API: se montan.
+      PYTHONPATH: /app:/workspace
+      HF_HOME: /models/hf
+      FASTEMBED_CACHE_PATH: /models/fastembed
+      # Solo se usa con TRACE_EXPORTER=langfuse (make observability)
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+    volumes:
+      - ./data:/workspace/data
+      - ./evals:/workspace/evals
+      - ./traces:/workspace/traces
+      - models:/models
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status == 200 else 1)"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        # Los rewrites de Next.js se resuelven en build, no en runtime.
+        API_URL: http://api:8000
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+  # Opcional: docker compose --profile local up  (o: make local)
+  # Sin configuracion de GPU: en CPU solo sirve para modelos pequenos.
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["local"]
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+
+volumes:
+  pgdata:
+  models:
+  ollama:

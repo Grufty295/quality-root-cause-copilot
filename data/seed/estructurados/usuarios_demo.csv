@@ -1,0 +1,7 @@
+usuario_id,rol,lineas
+u-insp-l1,inspector,L1
+u-insp-l2,inspector,L2
+u-ingcal-1,ingeniero_calidad,L1 L2
+u-ingcal-2,ingeniero_calidad,L1 L2
+u-gercal,gerente_calidad,L1 L2
+u-auditor,auditor,L1 L2

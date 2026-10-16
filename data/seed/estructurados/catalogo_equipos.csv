@@ -1,0 +1,27 @@
+equipo_id,tipo,linea,familia_terminal,numero_parte_terminal,aloja_en,umbral_pm_ciclos
+APL-L1-01,Aplicador,L1,A,TRM-A-1064,PRS-L1-01,250000
+APL-L1-02,Aplicador,L1,A,TRM-A-1064,PRS-L1-02,250000
+APL-L1-03,Aplicador,L1,B,TRM-B-2150,PRS-L1-01,250000
+APL-L1-04,Aplicador,L1,B,TRM-B-2150,PRS-L1-02,250000
+APL-L2-01,Aplicador,L2,A,TRM-A-1064,PRS-L2-01,250000
+APL-L2-02,Aplicador,L2,A,TRM-A-1064,PRS-L2-02,250000
+APL-L2-03,Aplicador,L2,B,TRM-B-2150,PRS-L2-01,250000
+APL-L2-04,Aplicador,L2,B,TRM-B-2150,PRS-L2-02,250000
+PRS-L1-01,Prensa de crimpado,L1,,,,
+PRS-L1-02,Prensa de crimpado,L1,,,,
+CUT-L1-01,Máquina de corte y desforre,L1,,,,
+INS-L1-01,Estación de inserción y TPA,L1,,,,
+INS-L1-02,Estación de inserción y TPA,L1,,,,
+BRD-L1,Tablero de ensamble,L1,,,,
+TST-L1,Probador eléctrico,L1,,,,
+INF-L1,Inspección final,L1,,,,
+EMP-L1,Empaque,L1,,,,
+PRS-L2-01,Prensa de crimpado,L2,,,,
+PRS-L2-02,Prensa de crimpado,L2,,,,
+CUT-L2-01,Máquina de corte y desforre,L2,,,,
+INS-L2-01,Estación de inserción y TPA,L2,,,,
+INS-L2-02,Estación de inserción y TPA,L2,,,,
+BRD-L2,Tablero de ensamble,L2,,,,
+TST-L2,Probador eléctrico,L2,,,,
+INF-L2,Inspección final,L2,,,,
+EMP-L2,Empaque,L2,,,,

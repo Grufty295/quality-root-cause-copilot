@@ -1,0 +1,10 @@
+# Override de desarrollo: make dev
+# Levanta solo db y api con recarga en caliente.
+# El web corre en el host: cd apps/web && API_URL=http://localhost:8000 npm run dev
+services:
+  api:
+    command: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+    volumes:
+      - ./apps/api:/app
+      # Evita que el .venv del host (otro SO) tape el .venv de la imagen
+      - /app/.venv

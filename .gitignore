@@ -1,0 +1,13 @@
+.env
+.env.langfuse
+traces/
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+.next/
+.DS_Store
+_respaldo-*.zip
+*.bak

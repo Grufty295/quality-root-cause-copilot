@@ -1,0 +1,92 @@
+ot_id,equipo_id,linea,tipo,fecha_programada,fecha_ejecucion,estado,motivo_reprogramacion,descripcion,ciclos_al_evento
+OT-2026-0001,APL-L1-01,L1,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0002,APL-L1-02,L1,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0003,APL-L1-03,L1,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0004,APL-L1-04,L1,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0005,APL-L2-01,L2,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0006,APL-L2-02,L2,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0007,APL-L2-03,L2,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0008,APL-L2-04,L2,Preventivo,2026-03-29,2026-03-29,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",
+OT-2026-0009,APL-L1-01,L1,Preventivo,2026-04-12,2026-04-12,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",185762
+OT-2026-0010,APL-L1-02,L1,Preventivo,2026-04-12,,Reprogramada,Auditoría de cliente; técnicos asignados a soporte de la auditoría,PM de aplicador,
+OT-2026-0011,APL-L2-01,L2,Preventivo,2026-04-12,2026-04-12,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",187269
+OT-2026-0012,APL-L2-02,L2,Preventivo,2026-04-12,2026-04-12,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",187269
+OT-2026-0013,APL-L1-02,L1,Preventivo,2026-04-19,,Reprogramada,Recuperación de volumen; sin ventana de paro disponible,PM de aplicador,
+OT-2026-0014,APL-L1-01,L1,Preventivo,2026-04-26,2026-04-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",225350
+OT-2026-0015,APL-L1-02,L1,Preventivo,2026-04-26,,Reprogramada,Falta de juego de punzón y yunque de repuesto para familia A,PM de aplicador,
+OT-2026-0016,APL-L1-03,L1,Preventivo,2026-04-26,2026-04-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",101788
+OT-2026-0017,APL-L2-01,L2,Preventivo,2026-04-26,2026-04-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224757
+OT-2026-0018,APL-L2-02,L2,Preventivo,2026-04-26,2026-04-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224757
+OT-2026-0019,APL-L2-03,L2,Preventivo,2026-04-26,2026-04-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",102014
+OT-2026-0020,APL-L1-02,L1,Correctivo,2026-05-02,2026-05-02,Completada,,Correctivo por NCR de calidad: desgaste visible en radios de punzón y yunque; reemplazo de ambos; ajuste de altura de cierre; primer artículo conforme,504078
+OT-2026-0021,APL-L1-04,L1,Preventivo,2026-05-03,2026-05-03,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",129359
+OT-2026-0022,APL-L2-04,L2,Preventivo,2026-05-03,2026-05-03,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",130276
+OT-2026-0023,APL-L1-01,L1,Preventivo,2026-05-10,2026-05-10,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223067
+OT-2026-0024,APL-L2-01,L2,Preventivo,2026-05-10,2026-05-10,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",227399
+OT-2026-0025,APL-L2-02,L2,Preventivo,2026-05-10,2026-05-10,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",227399
+OT-2026-0026,APL-L1-02,L1,Preventivo,2026-05-17,2026-05-17,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223763
+OT-2026-0027,CUT-L2-01,L2,Correctivo,2026-05-20,2026-05-20,Completada,,Cambio de cuchillas de desforre por contador,
+OT-2026-0028,APL-L1-01,L1,Preventivo,2026-05-24,2026-05-24,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222847
+OT-2026-0029,APL-L1-03,L1,Preventivo,2026-05-24,2026-05-24,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110402
+OT-2026-0030,APL-L2-01,L2,Preventivo,2026-05-24,2026-05-24,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224635
+OT-2026-0031,APL-L2-02,L2,Preventivo,2026-05-24,2026-05-24,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224635
+OT-2026-0032,APL-L2-03,L2,Preventivo,2026-05-24,2026-05-24,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",111918
+OT-2026-0033,APL-L1-02,L1,Preventivo,2026-05-31,2026-05-31,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222017
+OT-2026-0034,APL-L1-04,L1,Preventivo,2026-05-31,2026-05-31,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110368
+OT-2026-0035,APL-L2-04,L2,Preventivo,2026-05-31,2026-05-31,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",111592
+OT-2026-0036,APL-L1-01,L1,Preventivo,2026-06-07,2026-06-07,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224407
+OT-2026-0037,APL-L2-01,L2,Preventivo,2026-06-07,2026-06-07,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224000
+OT-2026-0038,APL-L2-02,L2,Preventivo,2026-06-07,2026-06-07,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224000
+OT-2026-0039,PRS-L1-01,L1,Correctivo,2026-06-09,2026-06-09,Completada,,Fuga en cilindro neumático de alimentación; reemplazo de sello,
+OT-2026-0040,APL-L1-02,L1,Preventivo,2026-06-14,2026-06-14,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",225138
+OT-2026-0041,APL-L1-01,L1,Preventivo,2026-06-21,2026-06-21,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224151
+OT-2026-0042,APL-L1-03,L1,Preventivo,2026-06-21,2026-06-21,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",111058
+OT-2026-0043,APL-L2-01,L2,Preventivo,2026-06-21,2026-06-21,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222929
+OT-2026-0044,APL-L2-02,L2,Preventivo,2026-06-21,2026-06-21,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222929
+OT-2026-0045,APL-L2-03,L2,Preventivo,2026-06-21,2026-06-21,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110655
+OT-2026-0046,CUT-L1-01,L1,Correctivo,2026-06-24,2026-06-24,Completada,,Cambio de cuchillas de desforre por contador,
+OT-2026-0047,APL-L1-02,L1,Preventivo,2026-06-28,2026-06-28,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",221900
+OT-2026-0048,APL-L1-04,L1,Preventivo,2026-06-28,,Reprogramada,Carga de producción,PM de aplicador,
+OT-2026-0049,APL-L2-04,L2,Preventivo,2026-06-28,2026-06-28,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110652
+OT-2026-0050,APL-L1-01,L1,Preventivo,2026-07-05,2026-07-05,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",221032
+OT-2026-0051,APL-L1-04,L1,Preventivo,2026-07-05,2026-07-05,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",138245
+OT-2026-0052,APL-L2-01,L2,Preventivo,2026-07-05,2026-07-05,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223977
+OT-2026-0053,APL-L2-02,L2,Preventivo,2026-07-05,2026-07-05,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223977
+OT-2026-0054,APL-L1-02,L1,Preventivo,2026-07-12,2026-07-12,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223671
+OT-2026-0055,APL-L1-01,L1,Preventivo,2026-07-19,2026-07-19,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224978
+OT-2026-0056,APL-L1-03,L1,Preventivo,2026-07-19,2026-07-19,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110426
+OT-2026-0057,APL-L2-01,L2,Preventivo,2026-07-19,2026-07-19,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223009
+OT-2026-0058,APL-L2-02,L2,Preventivo,2026-07-19,,Reprogramada,Carga de producción,PM de aplicador,
+OT-2026-0059,APL-L2-03,L2,Preventivo,2026-07-19,2026-07-19,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110670
+OT-2026-0060,APL-L1-02,L1,Preventivo,2026-07-26,2026-07-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223108
+OT-2026-0061,APL-L1-04,L1,Preventivo,2026-07-26,2026-07-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",83054
+OT-2026-0062,APL-L2-02,L2,Preventivo,2026-07-26,2026-07-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",335838
+OT-2026-0063,APL-L2-04,L2,Preventivo,2026-07-26,2026-07-26,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110672
+OT-2026-0064,APL-L1-01,L1,Preventivo,2026-08-02,2026-08-02,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222336
+OT-2026-0065,APL-L2-01,L2,Preventivo,2026-08-02,2026-08-02,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223625
+OT-2026-0066,APL-L2-02,L2,Preventivo,2026-08-02,2026-08-02,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110796
+OT-2026-0067,APL-L1-02,L1,Preventivo,2026-08-09,2026-08-09,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223702
+OT-2026-0068,APL-L1-01,L1,Preventivo,2026-08-16,2026-08-16,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222294
+OT-2026-0069,APL-L1-03,L1,Preventivo,2026-08-16,2026-08-16,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110086
+OT-2026-0070,APL-L2-01,L2,Preventivo,2026-08-16,2026-08-16,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",220795
+OT-2026-0071,APL-L2-02,L2,Preventivo,2026-08-16,2026-08-16,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",220795
+OT-2026-0072,APL-L2-03,L2,Preventivo,2026-08-16,2026-08-16,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110032
+OT-2026-0073,APL-L1-02,L1,Preventivo,2026-08-23,2026-08-23,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",221736
+OT-2026-0074,APL-L1-04,L1,Preventivo,2026-08-23,2026-08-23,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110286
+OT-2026-0075,APL-L2-04,L2,Preventivo,2026-08-23,2026-08-23,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110212
+OT-2026-0076,APL-L1-01,L1,Preventivo,2026-08-30,2026-08-30,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222573
+OT-2026-0077,APL-L2-01,L2,Preventivo,2026-08-30,,Reprogramada,Carga de producción; prensa sin ventana de paro,PM de aplicador,
+OT-2026-0078,APL-L2-02,L2,Preventivo,2026-08-30,2026-08-30,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",226209
+OT-2026-0079,APL-L1-02,L1,Preventivo,2026-09-06,2026-09-06,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",221861
+OT-2026-0080,APL-L2-01,L2,Preventivo,2026-09-06,,Reprogramada,Falta de juego de punzón y yunque de repuesto; requisición REQ-2026-1187 en trámite,PM de aplicador,
+OT-2026-0081,APL-L1-01,L1,Preventivo,2026-09-13,2026-09-13,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",221390
+OT-2026-0082,APL-L1-03,L1,Preventivo,2026-09-13,2026-09-13,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",109921
+OT-2026-0083,APL-L2-01,L2,Preventivo,2026-09-13,,Reprogramada,Refacción en tránsito del proveedor del aplicador,PM de aplicador,
+OT-2026-0084,APL-L2-02,L2,Preventivo,2026-09-13,2026-09-13,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",221166
+OT-2026-0085,APL-L2-03,L2,Preventivo,2026-09-13,2026-09-13,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110765
+OT-2026-0086,APL-L1-02,L1,Preventivo,2026-09-20,2026-09-20,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",223366
+OT-2026-0087,APL-L1-04,L1,Preventivo,2026-09-20,2026-09-20,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110233
+OT-2026-0088,APL-L2-04,L2,Preventivo,2026-09-20,2026-09-20,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",110751
+OT-2026-0089,APL-L1-01,L1,Preventivo,2026-09-27,2026-09-27,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",222439
+OT-2026-0090,APL-L2-01,L2,Preventivo,2026-09-27,,Pendiente,Refacción en tránsito del proveedor del aplicador,PM de aplicador,
+OT-2026-0091,APL-L2-02,L2,Preventivo,2026-09-27,2026-09-27,Completada,,"PM de aplicador: limpieza, inspección de punzón y yunque, ajuste de altura",224273
