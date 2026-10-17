@@ -269,6 +269,12 @@ def test_d4_prompt_carries_applicator_wear_but_d2_does_not(env, user_of, open_nc
     assert "Cambios que tocan" not in prompts["D2"]
     # La apertura por parte (con partes de clientes confidenciales) es solo de D4.
     assert "por parte" in prompts["D4"] and "por parte" not in prompts["D2"]
+    # El corte por lote (firma de RC-02) también es solo de D4.
+    assert (
+        "agrupar_por=lote_terminal" in prompts["D4"]
+        or "por lote_terminal" in prompts["D4"]
+    )
+    assert "lote_terminal" not in prompts["D2"]
     assert "por mil de" in prompts["D4"] and "por mil de" in prompts["D2"]
     # Cifra relativa a la fecha del fixture (cambia con el día UTC): solo se exige que sea excedido.
     assert re.search(

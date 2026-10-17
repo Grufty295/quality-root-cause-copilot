@@ -155,7 +155,7 @@ class AgentDeps:
     engine: Engine
     gateway: ModelGateway
     embedder: Embedder
-    tool_budget: int = 14
+    tool_budget: int = 15  # D4 usa 13; con expansión por enlace, 14
     d4_max_rounds: int = 2
     expand_case_links: bool = False
     """Sigue los enlaces del top de `search_cases` (8D recuperado o NCR que cita un 8D) hasta
@@ -318,6 +318,12 @@ class AgentGraph:
                 ),
                 lambda: tools.defect_summary(
                     ncr.plant_id, ncr.line_id, start, end, group_by="parte"
+                ),
+                # Firma de RC-02 (lote de proveedor): los defectos concentrados en un lote de
+                # terminal. Sin este corte, get_material_lots dice qué lotes se consumieron pero no
+                # cuál falla, y el modelo cae en RC-03 (inserción) con el mismo síntoma de back-out.
+                lambda: tools.defect_summary(
+                    ncr.plant_id, ncr.line_id, start, end, group_by="lote_terminal"
                 ),
                 lambda: tools.maintenance_history(
                     ncr.plant_id, ncr.line_id, end - timedelta(days=120), end
