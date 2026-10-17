@@ -24,7 +24,7 @@ from typing import Literal
 from sqlalchemy import Connection, text
 
 from app.modules.auth.models import CurrentUser
-from app.retrieval.models import DocumentKind, SearchHit, SearchQuery
+from app.retrieval.models import DocumentKind, SearchHit, SearchMode, SearchQuery
 from app.retrieval.service import RetrievalService
 
 MAX_RANGE_DAYS = 400
@@ -172,6 +172,8 @@ class QualityTools:
     today: date = field(default_factory=lambda: datetime.now(UTC).date())
     exclude_sources: tuple[str, ...] = ()
     """Documentos que la recuperación no devuelve (el propio caso en un replay)."""
+    controls_mode: SearchMode = "hybrid"
+    """Modo de `search_controls`. Distinto de `hybrid` solo en los experimentos del eval."""
 
     # ------------------------------------------------------------------ datos
 
@@ -699,6 +701,7 @@ class QualityTools:
                 as_of=self.as_of,
                 kinds=CONTROL_KINDS,
                 exclude_sources=self.exclude_sources,
+                mode=self.controls_mode,
             ),
         )
 

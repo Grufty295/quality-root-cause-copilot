@@ -164,7 +164,8 @@ Decisiones:
 - `--langfuse` cuelga cada puntaje de la traza de su corrida (`run_id` = trace_id).
 - Instalación: grupos `evals` (deepeval 4.3.0, ragas 0.4.3, langchain-community < 0.4) y `observabilidad`
   (langfuse 5.0.1) en `pyproject.toml`. Después de bajar estos cambios: `cd apps/api && uv lock`, luego
-  `make build-evals`. La imagen por defecto no los trae.
+  `make build-evals`. Este comando reconstruye y actualiza el contenedor de la API; la imagen por defecto no trae
+  estos grupos opcionales.
 
 Por qué estos dos: Ragas trae las métricas de RAG estándar (faithfulness, context precision) y DeepEval una
 estructura de métrica que también corre con `assert_test` / `deepeval test run` si más adelante se quiere en CI. Ninguno

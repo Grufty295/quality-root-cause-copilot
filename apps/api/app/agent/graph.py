@@ -62,7 +62,7 @@ from app.modules.auth.models import CurrentUser
 from app.modules.ncr import repository as ncr_repo
 from app.modules.ncr.models import Ncr
 from app.retrieval.embedder import Embedder
-from app.retrieval.models import DocumentKind, SearchHit
+from app.retrieval.models import DocumentKind, SearchHit, SearchMode
 from app.retrieval.service import RetrievalService
 
 QUERY_CHARS = 600
@@ -91,9 +91,10 @@ def linked_8d(hits: Sequence[SearchHit], limit: int) -> list[str]:
 
 
 def build_query(description: str, part_number: str | None) -> str:
-    """Consulta de las dos búsquedas de recuperación. El eval de recuperación usa esta misma
-    función: si cambia aquí, cambia lo que se mide."""
-    return " ".join(f"{description} {part_number or ''}".split())[:QUERY_CHARS]
+    """5. build_query: número de parte al inicio, antes de truncar a 600."""
+    prefix = f"{part_number or ''}".strip()
+    combined = f"{prefix} {description}".strip() if prefix else description
+    return " ".join(combined.split())[:QUERY_CHARS]
 
 
 D2_GROUPS = frozenset({"estacion", "turno"})
@@ -161,7 +162,11 @@ class AgentDeps:
     """Sigue los enlaces del top de `search_cases` (8D recuperado o NCR que cita un 8D) hasta
     la sección D4 de ese 8D. Apagado por defecto hasta que el eval del agente diga si ayuda:
     trae la causa del precedente, pero también la de 8D de otra causa (ver docs/evaluacion.md)."""
+    catalog_chars: int = 260
+    """Límite de caracteres para renderizar las entradas del catálogo en el prompt de D4 (default 260, variante `enlace_fix_cat` lo eleva a 1400)."""
     max_linked_8d: int = 2
+    controls_mode: SearchMode = "hybrid"
+    """Modo de `search_controls`. Solo cambia en variantes del eval (`enlace_ctl`)."""
     observer: AgentObserver | None = None
     """Observador de todas las corridas (p. ej. Langfuse). `run` puede sumar otro por corrida."""
     extra: dict[str, Any] = field(default_factory=dict)
@@ -263,6 +268,7 @@ class AgentGraph:
                 ToolBudget(self._d.tool_budget),
                 as_of=state.get("as_of"),
                 exclude_sources=state.get("exclude_sources", ()),
+                controls_mode=self._d.controls_mode,
             )
             classifier = RuleClassifier(ncr_repo.catalog_terms(conn))
             end = min(ncr.created_at.date(), state["as_of"] or date.max)
@@ -338,11 +344,14 @@ class AgentGraph:
                 lambda: tools.material_lots(ncr.plant_id, ncr.line_id, start, end),
             ]
         for call in calls:
+            t0 = time.perf_counter()
             try:
                 out = call()
             except ToolError as exc:
+                _tool_timed(state, "rechazada", t0, ok=False)
                 _event(state, "gather", "tool_rechazada", str(exc)[:200])
                 continue
+            _tool_timed(state, out.tool, t0)
             c = classifier.classify(out.text)
             book.add_tool(
                 tool=out.tool,
@@ -361,20 +370,26 @@ class AgentGraph:
             ("search_cases", tools.search_cases),
             ("search_controls", tools.search_controls),
         ):
+            t0 = time.perf_counter()
             try:
                 batches.append(search(query))
+                _tool_timed(state, name, t0)
             except ToolError as exc:
+                _tool_timed(state, name, t0, ok=False)
                 _event(state, "gather", "tool_rechazada", str(exc)[:200])
                 batches.append([])
             _retrieved(state, name, batches[-1])
         if self._d.expand_case_links and batches[0]:
             linked = linked_8d(batches[0], self._d.max_linked_8d)
             if linked:
+                t0 = time.perf_counter()
                 try:
                     batches.append(tools.linked_case_causes(linked))
+                    _tool_timed(state, "linked_case_causes", t0)
                     _event(state, "gather", "expansion_enlace", ",".join(linked))
                     _retrieved(state, "linked_case_causes", batches[-1])
                 except ToolError as exc:
+                    _tool_timed(state, "linked_case_causes", t0, ok=False)
                     _event(state, "gather", "tool_rechazada", str(exc)[:200])
         seen: set[UUID] = set()
         for hits in batches:
@@ -456,7 +471,15 @@ class AgentGraph:
             feedback=prior.feedback if prior else None,
             reason=prior.feedback_reason if prior else None,
         )
-        ctx = self._ctx(state, Stage.D4, book.all(), tier=tier)
+        # Pasa feedback, prior_draft e inherited_d2 a _ctx para BUG-20
+        ctx = self._ctx(
+            state,
+            Stage.D4,
+            book.all(),
+            tier=tier,
+            feedback=prior.feedback if prior else None,
+            prior_draft=prior.draft_json if prior else None,
+        )
 
         def verify(draft: D4Draft):
             content, violations, _ = verify_d4(draft, book, catalog)
@@ -484,9 +507,15 @@ class AgentGraph:
                 else "",
             )
         best = state.get("d4")
+        # BUG-08: BUG-08 corregido: compara (número de RC válidas, presencia de ND válida).
+        def _d4_key(c: D4Draft | None):
+            if not c:
+                return (-1, False)
+            return (len(c.causas_ocurrencia), bool(c.causa_no_deteccion and c.causa_no_deteccion.codigo))
+
         if content is not None and (
             best is None
-            or len(content.causas_ocurrencia) >= len(best.causas_ocurrencia)
+            or _d4_key(content) >= _d4_key(best)
         ):
             best = content
         out: dict[str, Any] = {"d4": best, "d4_retry": None}
@@ -588,6 +617,16 @@ class AgentGraph:
                     usage.input_tokens,
                     usage.output_tokens,
                     res.output.attempts,
+                    latency_ms=sum(r.latency_ms for r in res.output.results),
+                    reasoning_tokens=usage.reasoning_tokens,
+                    cost_usd=(
+                        float(usage.reported_cost_usd)
+                        if usage.reported_cost_usd is not None
+                        else None
+                    ),
+                    finish_reason=(res.output.results[-1].finish_reason or "")
+                    if res.output.results
+                    else "",
                 ),
             )
             content, violations = verify(res.output.value)
@@ -619,6 +658,9 @@ class AgentGraph:
         evidence,
         *,
         tier: ModelTier | None = None,
+        feedback: str | None = None,
+        prior_draft: str | None = None,
+        inherited_d2: str | None = None,
     ) -> RouteContext:
         ncr = state["ncr"]
         frags = [e for e in evidence if e.kind == "fragmento"]
@@ -628,16 +670,31 @@ class AgentGraph:
             if ncr.detected_level is None
             else ConfidentialityLevel(ncr.detected_level)
         )
+        classifier = state.get("classifier")
+        extra_texts = [t for t in (feedback, prior_draft, inherited_d2) if t]
+        extra_levels = []
+        extra_pii = ncr.contains_pii is not False or any(e.contains_pii for e in tools)
+        for text in extra_texts:
+            # BUG-20: clasifica y agrega nivel y PII de feedback, borrador previo y D2 heredado (fail-closed)
+            if classifier:
+                res = classifier.classify(text)
+                if res.level is not None:
+                    extra_levels.append(ConfidentialityLevel(res.level))
+                if res.contains_pii:
+                    extra_pii = True
+            else:
+                extra_levels.append(ConfidentialityLevel.CONFIDENCIAL)
+                extra_pii = True
+
         input_level = (
-            ConfidentialityLevel.highest([ncr_level, *(e.level for e in tools)])
-            if ncr_level
+            ConfidentialityLevel.highest([ncr_level, *extra_levels, *(e.level for e in tools)])
+            if ncr_level or extra_levels
             else None
         )
         return RouteContext(
             stage=stage,
             input_level=input_level,
-            input_contains_pii=ncr.contains_pii is not False
-            or any(e.contains_pii for e in tools),
+            input_contains_pii=extra_pii,
             fragment_ids=tuple(e.fragment_id for e in frags if e.fragment_id),
             fragment_levels=tuple(e.level for e in frags),
             fragment_contains_pii=any(e.contains_pii for e in frags),
@@ -650,6 +707,13 @@ class AgentGraph:
 
 def _observer(state: AgentState) -> AgentObserver:
     return state.get("observer") or AgentObserver()
+
+
+def _tool_timed(state: AgentState, tool: str, t0: float, *, ok: bool = True) -> None:
+    """Duración de una herramienta (consulta a la base, búsqueda vectorial). Sin parámetros ni texto."""
+    _observer(state).tool_call(
+        state["trace_id"], tool, int((time.perf_counter() - t0) * 1000), ok
+    )
 
 
 def _event(state: AgentState, stage: str, event: str, detail: str) -> None:

@@ -53,6 +53,10 @@ def build_deps(engine: Engine) -> AgentDeps:
         embedder=get_embedder(),
         # TRACE_EXPORTER=langfuse: una traza sin contenido por análisis (app/agent/observe.py).
         observer=observer_from_env(),
+        # Variante `enlace` del eval. Serie dev-ds (mismo modelo, 3 repeticiones): pass@1 0.72 contra
+        # 0.67 de `base`; recurrentes (E7) 0.00 → 0.42, pero causa nueva (E8) 1.00 → 0.75: a veces
+        # ancla en un 8D que no aplica. Ver docs/evaluacion.md. Se revierte con False.
+        expand_case_links=True,
     )
     deps.extra["clients"] = clients
     return deps

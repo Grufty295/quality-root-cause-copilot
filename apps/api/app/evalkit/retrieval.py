@@ -42,6 +42,9 @@ from app.retrieval.service import RetrievalService
 DEFAULT_EVALS = Path("/workspace/evals")
 DEFAULT_OUT = Path("/workspace/traces/evals")
 MODES: tuple[SearchMode, ...] = ("text", "vector", "hybrid")
+EXPERIMENTAL: tuple[SearchMode, ...] = ("hybrid_w", "hybrid_doc", "hybrid_wdoc")
+"""Variantes de la fusión para comparar contra `hybrid` (`--modes text,vector,hybrid,hybrid_w,...`).
+No son parte de los gates ni cambian lo que hace el agente."""
 KS = (5, 10)
 FETCH = max(KS)
 KINDS = {"cases": CASE_KINDS, "controls": CONTROL_KINDS}
@@ -390,7 +393,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     from app.retrieval.embedder import get_embedder
 
     modes = [x for x in args.modes.split(",") if x]
-    bad = set(modes) - set(MODES)
+    bad = set(modes) - set(MODES) - set(EXPERIMENTAL)
     if bad:
         raise SystemExit(f"modos desconocidos: {sorted(bad)}")
     wanted = DEV_EPISODES | (TEST_EPISODES if args.test else frozenset())

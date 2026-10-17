@@ -22,6 +22,7 @@ from sqlalchemy import Connection
 
 from app.ingest.service import IngestReport, IngestService
 from app.modules.auth.demo_users import (
+    JRZ2_EXTRA_USERS,
     OTHER_PLANT_USER,
     DemoUser,
     read_roster,
@@ -63,7 +64,7 @@ class SeedReport:
 
 
 def build_roster(estructurados: Path) -> list[DemoUser]:
-    return [*read_roster(estructurados / "usuarios_demo.csv"), OTHER_PLANT_USER]
+    return [*read_roster(estructurados / "usuarios_demo.csv"), OTHER_PLANT_USER, *JRZ2_EXTRA_USERS]
 
 
 class SeedService:

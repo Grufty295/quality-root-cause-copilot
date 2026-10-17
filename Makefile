@@ -48,7 +48,7 @@ local: init ## Todo mas Ollama (perfil local; usa LOCAL_PROVIDER=ollama)
 	$(COMPOSE) --profile local up --build
 
 observability: init-langfuse ## Todo mas Langfuse en segundo plano (UI en http://localhost:3001)
-	$(COMPOSE) --profile observability up --build -d
+	UV_EXTRA_GROUPS="--group observabilidad" $(COMPOSE) --profile observability up --build -d
 	@echo "Langfuse: http://localhost:3001  (usuario admin@example.com; clave: LANGFUSE_INIT_USER_PASSWORD en .env.langfuse)"
 	@echo "Para exportar trazas: TRACE_EXPORTER=langfuse en .env y luego: $(COMPOSE) up -d api  (restart no relee .env)"
 
@@ -109,8 +109,8 @@ eval-labels: ## Muestra de N hechos (sin el juicio del juez) para etiquetar a ma
 eval-gates: ## Gates bloqueantes sobre los reportes ya generados (no llama al modelo). VARIANT=enlace SPLIT=all
 	$(COMPOSE) exec api python -m app.evalkit.gates --variant $(or $(VARIANT),base) --split $(or $(SPLIT),dev)
 
-build-evals: ## Reconstruye la API con DeepEval, Ragas y Langfuse (grupos evals y observabilidad) y el commit actual
-	GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null) UV_EXTRA_GROUPS="--group evals --group observabilidad" $(COMPOSE) build api
+build-evals: ## Reconstruye y actualiza la API con DeepEval, Ragas y Langfuse y el commit actual
+	GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null) UV_EXTRA_GROUPS="--group evals --group observabilidad" $(COMPOSE) up --build -d api
 
 llm-diagnose: ## Por qué falla la llamada al modelo: config efectiva, key, proveedores y matriz de parámetros. DEST=api para el otro destino; CASO=EV-01 corre el agente real y repite el request que falla
 	$(COMPOSE) exec api python -m app.evalkit.diagnose $(if $(CASO),--caso $(CASO),--dest $(or $(DEST),local))

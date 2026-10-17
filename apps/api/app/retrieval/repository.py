@@ -68,25 +68,43 @@ sem AS (
 ),
 fused AS (
     SELECT id,
-           sum(1.0 / (:rrf_k + r))          AS score,
+           sum(CASE WHEN src = 'sem' THEN :sem_w ELSE :lex_w END / (:rrf_k + r)) AS score,
            min(r) FILTER (WHERE src = 'lex') AS lex_rank,
            min(r) FILTER (WHERE src = 'sem') AS sem_rank
     FROM (SELECT id, r, 'lex' AS src FROM lex
           UNION ALL
           SELECT id, r, 'sem' AS src FROM sem) u
     GROUP BY id
+),
+ranked AS (
+    SELECT f.id AS fragment_id, f.document_id, d.source_key, d.kind, d.title,
+           f.section, f.ordinal, f.content, f.level, f.contains_pii, f.doc_date,
+           f.plant_id, f.line_id,
+           fu.score, fu.lex_rank, fu.sem_rank,
+           row_number() OVER (PARTITION BY f.document_id ORDER BY fu.score DESC, f.id) AS doc_rank
+    FROM fused fu
+    JOIN fragment f ON f.id = fu.id
+    JOIN document d ON d.id = f.document_id
 )
-SELECT f.id AS fragment_id, f.document_id, d.source_key, d.kind, d.title,
-       f.section, f.ordinal, f.content, f.level, f.contains_pii, f.doc_date,
-       f.plant_id, f.line_id,
-       fu.score, fu.lex_rank, fu.sem_rank
-FROM fused fu
-JOIN fragment f ON f.id = fu.id
-JOIN document d ON d.id = f.document_id
-ORDER BY fu.score DESC, f.id
+SELECT fragment_id, document_id, source_key, kind, title, section, ordinal, content, level,
+       contains_pii, doc_date, plant_id, line_id, score, lex_rank, sem_rank
+FROM ranked
+WHERE CAST(:per_doc AS int) IS NULL OR doc_rank <= CAST(:per_doc AS int)
+ORDER BY score DESC, fragment_id
 LIMIT :top_k
 """
 )
+
+
+# Cómo se lee cada modo: (ramas, peso léxico, peso vectorial, fragmentos por documento).
+_MODE_PARAMS: dict[str, tuple[bool, bool, float, float, int | None]] = {
+    "hybrid": (True, True, 1.0, 1.0, None),
+    "text": (True, False, 1.0, 1.0, None),
+    "vector": (False, True, 1.0, 1.0, None),
+    "hybrid_w": (True, True, 1.0, 2.0, None),
+    "hybrid_doc": (True, True, 1.0, 1.0, 1),
+    "hybrid_wdoc": (True, True, 1.0, 2.0, 1),
+}
 
 
 def hybrid_search(
@@ -102,8 +120,7 @@ def hybrid_search(
     kinds: Sequence[DocumentKind] | None = None,
     exclude_sources: Sequence[str] = (),
 ) -> list[SearchHit]:
-    use_lex = mode in ("hybrid", "text")
-    use_sem = mode in ("hybrid", "vector")
+    use_lex, use_sem, lex_w, sem_w, per_doc = _MODE_PARAMS[mode]
     if use_sem and query_vector is None:
         raise ValueError(f"el modo {mode!r} requiere el vector de la consulta")
 
@@ -122,6 +139,9 @@ def hybrid_search(
             "model": embedding_model,
             "pool": max(CANDIDATE_POOL, top_k),
             "rrf_k": RRF_K,
+            "lex_w": lex_w,
+            "sem_w": sem_w,
+            "per_doc": per_doc,
             "top_k": top_k,
         },
     ).mappings()

@@ -41,7 +41,15 @@ from app.evalkit.retrieval import DEFAULT_EVALS, DEFAULT_OUT, load_cases
 from app.evalkit.scoring import score_d4
 
 PLANT = "JRZ1"
-VARIANTS = {"base": False, "enlace": True}
+# Por variante: qué campos de AgentDeps cambian. `enlace_ctl` es exploratorio (post-hoc): prueba
+# `hybrid_wdoc` en `search_controls`, que en el eval de recuperación subió hit@5 de 0.50 a 0.75.
+VARIANTS = {
+    "base": {"expand_case_links": False},
+    "enlace": {"expand_case_links": True},
+    "enlace_ctl": {"expand_case_links": True, "controls_mode": "hybrid_wdoc"},
+    "enlace_fix": {"expand_case_links": True},
+    "enlace_fix_cat": {"expand_case_links": True, "catalog_chars": 1400},
+}
 _SHIFTS = {"T1": 1, "T2": 2, "T3": 3}
 
 
@@ -84,7 +92,7 @@ async def run_once(
 
     from app.agent.observe import RecordingObserver
 
-    variant_deps = dataclasses.replace(deps, expand_case_links=VARIANTS[variant])
+    variant_deps = dataclasses.replace(deps, **VARIANTS[variant])
     recorder = RecordingObserver(keep_evidence=True)
     started = time.perf_counter()
     started_at = datetime.now(UTC)
@@ -169,6 +177,20 @@ async def run_once(
             else None
         ),
         "wall_ms": wall_ms,
+        # Dónde se va el tiempo: espera del modelo (suma de las llamadas HTTP), recolección de
+        # datos (gather = consultas SQL + búsquedas vectoriales con su embedding) y el resto
+        # (cola del pool, verificación, escritura). `tool_ms` desglosa por herramienta.
+        "llm_ms": sum(int(r["latency_ms"] or 0) for r in audit),
+        "llm_ms_max": max((int(r["latency_ms"] or 0) for r in audit), default=0),
+        "gather_ms": (run_info.get("stage_ms") or {}).get("gather"),
+        "tool_ms": dict(record.tool_ms) if record else {},
+        "tool_count": dict(record.tool_count) if record else {},
+        # `tokens_out` incluye el razonamiento: lo visible es la diferencia.
+        "visible_out_tokens": max(
+            sum(int(r["tokens_out"] or 0) for r in audit)
+            - sum(int((r["tags"] or {}).get("reasoning_tokens", 0)) for r in audit),
+            0,
+        ),
         # Para medir la concurrencia real de la serie (observed_concurrency).
         "started_at": started_at.isoformat(),
         "finished_at": datetime.now(UTC).isoformat(),
@@ -184,6 +206,15 @@ async def run_once(
         # datos ficticios y el archivo queda local; con datos reales esto no se escribe.
         **evidence_for_judge(content, record),
     }
+
+
+def _tool_means(rows: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+    """Milisegundos medios por herramienta y corrida (0 si esa corrida no la usó)."""
+    names = {t for r in rows for t in (r.get("tool_ms") or {})}
+    return {
+        t: sum((r.get("tool_ms") or {}).get(t, 0) for r in rows) / len(rows)
+        for t in sorted(names)
+    } if rows else {}
 
 
 def case_dims(case: Mapping[str, Any]) -> dict[str, str]:
@@ -441,6 +472,17 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
                 "tokens_in_mean": _mean(r["tokens_in"] for r in rs),
                 "tokens_out_mean": _mean(r["tokens_out"] for r in rs),
                 "reasoning_tokens_mean": _mean(r["reasoning_tokens"] for r in rs),
+                "llm_ms_mean": _mean(r.get("llm_ms") for r in rs),
+                "llm_ms_max_mean": _mean(r.get("llm_ms_max") for r in rs),
+                "gather_ms_mean": _mean(r.get("gather_ms") for r in rs),
+                "visible_out_mean": _mean(r.get("visible_out_tokens") for r in rs),
+                "reasoning_share": _mean(
+                    r["reasoning_tokens"] / r["tokens_out"]
+                    for r in rs
+                    if r.get("tokens_out")
+                ),
+                "tool_ms_mean": _tool_means(rs),
+                "wall_ms_mean": _mean(walls),
                 "wall_ms_p50": statistics.median(walls) if walls else None,
                 "wall_ms_p95": _pct(walls, 0.95),
                 "providers_by_model": {m: sorted(p) for m, p in providers.items()},
@@ -607,6 +649,35 @@ def render_markdown(report: Mapping[str, Any]) -> str:
             f"| {a['variant']} | {a['split']} | {num1(a.get('llm_calls_mean'))} | {usd(a['cost_est_usd_mean'])} | {usd(a['cost_reported_usd_mean'])} "
             f"| {num(a['tokens_in_mean'])} | {num(a['tokens_out_mean'])} | {num(a['reasoning_tokens_mean'])} "
             f"| {sec(a['wall_ms_p50'])} | {sec(a['wall_ms_p95'])} |"
+        )
+    lines += [
+        "",
+        "## Dónde se va el tiempo y los tokens (por corrida, promedio)",
+        "",
+        "`modelo` = espera de las llamadas HTTP; `datos` = etapa gather (SQL + búsquedas, incluye el "
+        "embedding de la consulta); `pared` es el promedio (la mediana está en la tabla de arriba); `resto` = pared − modelo − datos (cola, verificación, escritura). "
+        "`razonamiento %` es la parte de los tokens de salida que no se ve. "
+        "TTFT no se mide: el cliente no usa streaming y con salida JSON no hay primer token útil antes del final.",
+        "",
+        "| variante | split | pared s | modelo s | datos s | resto s | llamada más lenta s | razonamiento % | salida visible tok | herramienta más lenta |",
+        "|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for a in report["aggregates"]:
+        # Promedio contra promedio: la mediana de la pared contra la media del modelo daba "resto"
+        # negativo cuando hay cola larga.
+        wall = a.get("wall_ms_mean")
+        llm, gat = a.get("llm_ms_mean"), a.get("gather_ms_mean")
+        rest = (
+            wall - llm - gat if None not in (wall, llm, gat) else None
+        )
+        tm = a.get("tool_ms_mean") or {}
+        slow = max(tm.items(), key=lambda kv: kv[1]) if tm else None
+        share = a.get("reasoning_share")
+        lines.append(
+            f"| {a['variant']} | {a['split']} | {sec(wall)} | {sec(llm)} | {sec(gat)} | {sec(rest)} "
+            f"| {sec(a.get('llm_ms_max_mean'))} | {'—' if share is None else f'{share:.0%}'} "
+            f"| {num(a.get('visible_out_mean'))} "
+            f"| {'—' if slow is None else f'{slow[0]} ({slow[1] / 1000:.1f} s)'} |"
         )
     truncated = sum(
         a.get("truncated_calls", 0) for a in report["aggregates"] if a["split"] == "all"

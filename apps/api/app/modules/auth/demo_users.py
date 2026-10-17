@@ -78,6 +78,32 @@ otra planta que busque el mismo caso y no lo encuentre. Quitarlo es borrar esta
 entrada y su uso en app.seed.service."""
 
 
+JRZ2_EXTRA_USERS = (
+    DemoUser(
+        username="u-insp-jrz2",
+        display_name="Inspector línea 1 (JRZ2)",
+        role="inspector",
+        lines=("L1",),
+        plant_id="JRZ2",
+    ),
+    DemoUser(
+        username="u-gercal-jrz2",
+        display_name="Gerente de calidad (JRZ2)",
+        role="gerente",
+        lines=("L1",),
+        plant_id="JRZ2",
+    ),
+    DemoUser(
+        username="u-auditor-jrz2",
+        display_name="Auditor (JRZ2)",
+        role="auditor",
+        lines=("L1",),
+        plant_id="JRZ2",
+    ),
+)
+"""Completan los 4 roles en JRZ2 para poder demostrar el flujo y el aislamiento."""
+
+
 def read_roster(path: Path) -> list[DemoUser]:
     """Lee usuarios_demo.csv. Un rol desconocido es un error, no un valor por defecto."""
     with path.open(encoding="utf-8-sig", newline="") as handle:

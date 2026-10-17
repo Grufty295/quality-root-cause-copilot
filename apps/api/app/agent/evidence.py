@@ -83,9 +83,29 @@ class EvidenceBook:
         contains_pii: bool,
         catalog_code: str | None = None,
     ) -> Evidence:
-        existing = self._by_fragment.get(fragment_id)
-        if existing:
-            return self._items[existing]
+        existing_key = self._by_fragment.get(fragment_id)
+        if existing_key:
+            item = self._items[existing_key]
+            # BUG-07: si ya existe pero llega con catalog_code, o viceversa, preserva/añade catalog_code (invariante al orden)
+            if not item.catalog_code and catalog_code:
+                # Actualiza el ítem existente preservando su ID y orden
+                updated = Evidence(
+                    id=item.id,
+                    kind=item.kind,
+                    header=item.header,
+                    body=item.body,
+                    level=item.level,
+                    contains_pii=item.contains_pii,
+                    fragment_id=item.fragment_id,
+                    document=item.document,
+                    section=item.section,
+                    tool=item.tool,
+                    params=item.params,
+                    catalog_code=catalog_code,
+                )
+                self._items[existing_key] = updated
+                return updated
+            return item
         eid = f"F{sum(e.kind == 'fragmento' for e in self._items.values()) + 1}"
         item = Evidence(
             id=eid,

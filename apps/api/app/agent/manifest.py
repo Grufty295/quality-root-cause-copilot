@@ -86,6 +86,9 @@ def build_manifest(
             "api": _destination(settings.api),
         },
     }
+    if getattr(deps, "controls_mode", "hybrid") != "hybrid":
+        # Solo si no es el de producción: así el config_id de la configuración medida no cambia.
+        body["agent"]["controls_mode"] = deps.controls_mode
     return {
         **body,
         # `config_id` no incluye la revisión de código: dos builds con la misma configuración

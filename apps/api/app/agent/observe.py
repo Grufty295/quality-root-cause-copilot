@@ -58,6 +58,13 @@ class LLMCallEvent:
     output_tokens: int
     attempts: int
     ok: bool = True
+    latency_ms: int = 0
+    """Suma de la espera HTTP de los intentos de esta llamada (sin cola local ni reintentos fuera)."""
+    reasoning_tokens: int = 0
+    """Parte de `output_tokens` que fue razonamiento (se cobra, no se ve)."""
+    cost_usd: float | None = None
+    """Costo que reporta el proveedor; None si no lo reporta (no se inventa)."""
+    finish_reason: str = ""
 
 
 class AgentObserver:
@@ -76,6 +83,10 @@ class AgentObserver:
     def event(self, run_id: str, stage: str, event: str, detail: str) -> None: ...
 
     def llm_call(self, run_id: str, call: LLMCallEvent) -> None: ...
+
+    def tool_call(
+        self, run_id: str, tool: str, duration_ms: int, ok: bool
+    ) -> None: ...
 
     def retrieved(
         self, run_id: str, search: str, refs: Sequence[RetrievedRef]
@@ -122,6 +133,9 @@ class CompositeObserver(AgentObserver):
 
     def llm_call(self, run_id, call):
         self._each("llm_call", run_id, call)
+
+    def tool_call(self, run_id, tool, duration_ms, ok):
+        self._each("tool_call", run_id, tool, duration_ms, ok)
 
     def retrieved(self, run_id, search, refs):
         self._each("retrieved", run_id, search, refs)
@@ -193,6 +207,9 @@ class RunRecord:
     events: list[tuple[str, str, str]] = field(default_factory=list)
     llm_calls: list[LLMCallEvent] = field(default_factory=list)
     retrieved: dict[str, list[RetrievedRef]] = field(default_factory=dict)
+    tool_ms: dict[str, int] = field(default_factory=dict)
+    """Milisegundos por herramienta (suma si se llama más de una vez) y cuántas veces."""
+    tool_count: dict[str, int] = field(default_factory=dict)
     duration_ms: int | None = None
     error: str | None = None
     evidence: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -226,6 +243,11 @@ class RecordingObserver(AgentObserver):
 
     def llm_call(self, run_id, call):
         self._rec(run_id).llm_calls.append(call)
+
+    def tool_call(self, run_id, tool, duration_ms, ok):
+        r = self._rec(run_id)
+        r.tool_ms[tool] = r.tool_ms.get(tool, 0) + duration_ms
+        r.tool_count[tool] = r.tool_count.get(tool, 0) + 1
 
     def retrieved(self, run_id, search, refs):
         self._rec(run_id).retrieved.setdefault(search, []).extend(refs)
@@ -307,10 +329,29 @@ class LangfuseObserver(AgentObserver):
                 meta["detalle"] = detail[:200]
             root.create_event(name=event, metadata=meta)
 
+    def tool_call(self, run_id, tool, duration_ms, ok):
+        root = self._roots.get(run_id)
+        if root is None:
+            return
+        span = root.start_observation(
+            name=f"tool:{tool}",
+            as_type="tool",
+            metadata={"duracion_ms": duration_ms},
+            level=None if ok else "ERROR",
+        )
+        span.end()
+
     def llm_call(self, run_id, call):
         root = self._roots.get(run_id)
         if root is None:
             return
+        # `usage_details` solo con input/output: Langfuse suma todas las claves para el total, y
+        # `output_tokens` ya incluye el razonamiento. El razonamiento va en metadata.
+        # `cost_details` es el costo que reportó el proveedor: los modelos de este proyecto no
+        # están en la tabla de precios de Langfuse, así que sin esto el costo sale vacío.
+        extra: dict[str, Any] = {}
+        if call.cost_usd is not None:
+            extra["cost_details"] = {"total": call.cost_usd}
         gen = root.start_observation(
             name=f"llm:{call.stage}",
             as_type="generation",
@@ -321,8 +362,13 @@ class LangfuseObserver(AgentObserver):
                 "nivel": call.level,
                 "tier": call.tier,
                 "intentos": call.attempts,
+                "latencia_ms": call.latency_ms,
+                "razonamiento_tokens": call.reasoning_tokens,
+                "salida_visible_tokens": max(call.output_tokens - call.reasoning_tokens, 0),
+                "finish_reason": call.finish_reason,
             },
             level=None if call.ok else "ERROR",
+            **extra,
         )
         gen.end()
 
