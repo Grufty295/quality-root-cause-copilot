@@ -200,3 +200,42 @@ def test_debug_http_prints_provider_error_but_not_prompt_text(make_api, monkeypa
     err = capsys.readouterr().err
     assert "HTTP 404" in err and "No endpoints found" in err
     assert '"hola"' not in err and "1 mensajes, 4 caracteres" in err
+
+
+def test_default_body_uses_max_tokens_and_temperature(make_api):
+    sent = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        sent.update(json.loads(req.content))
+        return httpx.Response(200, json=openai_body())
+
+    run(make_client(make_api(), handler).complete(REQ))
+    assert sent["max_tokens"] == REQ.max_tokens
+    assert sent["temperature"] == REQ.temperature
+    assert "max_completion_tokens" not in sent
+
+
+def test_openai_reasoning_models_use_max_completion_tokens_and_no_temperature(make_api):
+    """OpenAI (o-series, GPT-5) rechaza `max_tokens` y una `temperature` distinta de la de fábrica."""
+    sent = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        sent.update(json.loads(req.content))
+        return httpx.Response(200, json=openai_body())
+
+    api = make_api(
+        base_url="https://api.openai.com/v1",
+        provider_label="openai",
+        token_param="max_completion_tokens",
+        send_temperature=False,
+    )
+    run(make_client(api, handler).complete(REQ))
+    assert sent["max_completion_tokens"] == REQ.max_tokens
+    assert "max_tokens" not in sent
+    assert "temperature" not in sent
+    assert "provider" not in sent  # extra_body vacío: el campo `provider` es de OpenRouter
+
+
+def test_token_param_rejects_unknown_names(make_api):
+    with pytest.raises(ValueError):
+        make_api(token_param="max_output_tokens")

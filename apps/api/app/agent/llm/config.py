@@ -11,6 +11,14 @@ Variables (delimitador anidado `__`):
     LLM_LOCAL__SIMULATED=false
     LLM_API__BASE_URL=https://openrouter.ai/api/v1
     LLM_API__API_KEY=...
+
+Para usar OpenAI directo en lugar de OpenRouter (en `LLM_API__*` o en el local simulado):
+
+    LLM_API__BASE_URL=https://api.openai.com/v1
+    LLM_API__PROVIDER_LABEL=openai
+    LLM_API__EXTRA_BODY={}                  # `provider` es de OpenRouter: OpenAI lo rechaza
+    LLM_API__TOKEN_PARAM=max_completion_tokens   # modelos de razonamiento (o-series, GPT-5)
+    LLM_API__SEND_TEMPERATURE=false              # esos mismos no aceptan temperature
 """
 
 from __future__ import annotations
@@ -18,7 +26,7 @@ from __future__ import annotations
 import ipaddress
 from decimal import Decimal
 from functools import lru_cache
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 from pydantic import (
@@ -72,7 +80,22 @@ class DestinationSettings(BaseModel):
     """
 
     extra_body: dict[str, Any] = Field(default_factory=dict)
-    """Campos extra del request (p. ej. preferencias de proveedor de OpenRouter)."""
+    """Campos extra del request (p. ej. preferencias de proveedor de OpenRouter).
+
+    Son específicos de cada proveedor: `{"provider": {...}}` es de OpenRouter y OpenAI
+    responde 400 si lo recibe. Con OpenAI directo, déjalo vacío (`{}`).
+    """
+
+    token_param: Literal["max_tokens", "max_completion_tokens"] = "max_tokens"
+    """Nombre del campo con el tope de tokens de salida.
+
+    OpenRouter y la mayoría de servidores usan `max_tokens`. Los modelos de razonamiento de
+    OpenAI exigen `max_completion_tokens`, y ese tope incluye los tokens de razonamiento:
+    con un tope bajo la respuesta puede quedar vacía (`finish_reason=length`).
+    """
+
+    send_temperature: bool = True
+    """Si el request lleva `temperature`. Falso para los modelos que solo aceptan el valor por defecto."""
 
     def model_for(self, tier: ModelTier) -> str:
         return self.model_small if tier is ModelTier.SMALL else self.model_large

@@ -43,7 +43,8 @@ docker compose -f docker-compose.yml -f docker-compose.langfuse.yml exec api pyt
 (Antes, copia `.env.example` a `.env` y crea la carpeta `traces/`, que es lo que hace `make init`.)
 
 Web en <http://localhost:3000> (login de demo, sin contraseña); API en <http://localhost:8000/health>.
-Los modelos van fijos en `.env` (`LLM_LOCAL__*`, `LLM_API__*`); sin llave no hay análisis.
+Los modelos van fijos en `.env` (`LLM_LOCAL__*`, `LLM_API__*`); sin llave no hay análisis. El proveedor puede ser OpenRouter
+(por defecto) u OpenAI: el bloque "Usar OpenAI" de `.env.example` lista las variables, incluidas las de los modelos de razonamiento.
 
 ```bash
 make test            # pruebas contra una base aparte (eightd_test)

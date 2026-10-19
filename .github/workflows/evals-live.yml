@@ -1,5 +1,8 @@
 # Cambio de modelo o de prompt con efecto en calidad: corrida REAL, a mano. Gasta tokens (~US$0.15 el humo).
-# Necesita el secreto OPENROUTER_API_KEY y las variables LLM_MODEL, LLM_PRICE_IN, LLM_PRICE_OUT. No corre en PR para no pagar por cada push.
+# Proveedor a elegir al lanzarlo: openrouter (secreto OPENROUTER_API_KEY) u openai (secreto OPENAI_API_KEY).
+# Modelo y precios: los inputs de la corrida; si van vacíos, las variables del repo LLM_MODEL, LLM_PRICE_IN, LLM_PRICE_OUT.
+# No corre en PR para no pagar por cada push.
+# GIT_SHA (7 caracteres del commit) se exporta al entorno: el reporte queda atado a un commit (`código <sha>`).
 # Rutas: el código usa /workspace/... (montaje del compose); en el runner se pasan --data y --evals explícitos.
 # 1a corrida en Actions (19 oct 2026): fallo por /workspace/data/seed inexistente -> corregido. Escrito contra los comandos del Makefile; ajusta variables LLM_* a tu .env.example.
 name: evals-live
@@ -10,6 +13,24 @@ on:
       casos:
         description: "Casos separados por coma"
         default: "EV-01,EV-05,EV-09"
+      proveedor:
+        description: "Proveedor del modelo"
+        type: choice
+        options: [openrouter, openai]
+        default: openrouter
+      modelo:
+        description: "Modelo (vacío = variable LLM_MODEL del repo)"
+        default: ""
+      precio_in:
+        description: "USD por millón de tokens de entrada (vacío = LLM_PRICE_IN)"
+        default: ""
+      precio_out:
+        description: "USD por millón de tokens de salida (vacío = LLM_PRICE_OUT)"
+        default: ""
+      razonamiento:
+        description: "Modelo de razonamiento de OpenAI (o-series, GPT-5): usa max_completion_tokens y no envía temperature"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,17 +52,32 @@ jobs:
       DATABASE_URL: postgresql+psycopg://postgres:ci@localhost:5432/eightd
       LLM_ALLOW_SIMULATED_LOCAL: "true"
       LLM_LOCAL__SIMULATED: "true"
-      LLM_LOCAL__BASE_URL: https://openrouter.ai/api/v1
-      LLM_LOCAL__API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      LLM_LOCAL__PROVIDER_LABEL: openrouter-simula-local
-      LLM_LOCAL__MODEL_SMALL: ${{ vars.LLM_MODEL }}
-      LLM_LOCAL__MODEL_LARGE: ${{ vars.LLM_MODEL }}
+      LLM_LOCAL__BASE_URL: ${{ inputs.proveedor == 'openai' && 'https://api.openai.com/v1' || 'https://openrouter.ai/api/v1' }}
+      LLM_LOCAL__API_KEY: ${{ inputs.proveedor == 'openai' && secrets.OPENAI_API_KEY || secrets.OPENROUTER_API_KEY }}
+      LLM_LOCAL__PROVIDER_LABEL: ${{ inputs.proveedor == 'openai' && 'openai-simula-local' || 'openrouter-simula-local' }}
+      LLM_LOCAL__MODEL_SMALL: ${{ inputs.modelo || vars.LLM_MODEL }}
+      LLM_LOCAL__MODEL_LARGE: ${{ inputs.modelo || vars.LLM_MODEL }}
       LLM_LOCAL__TIMEOUT_S: "180"
-      LLM_LOCAL__PRICE_IN_PER_MTOK: ${{ vars.LLM_PRICE_IN }}
-      LLM_LOCAL__PRICE_OUT_PER_MTOK: ${{ vars.LLM_PRICE_OUT }}
-      LLM_LOCAL__EXTRA_BODY: '{"provider":{"data_collection":"deny"}}'
+      LLM_LOCAL__PRICE_IN_PER_MTOK: ${{ inputs.precio_in || vars.LLM_PRICE_IN }}
+      LLM_LOCAL__PRICE_OUT_PER_MTOK: ${{ inputs.precio_out || vars.LLM_PRICE_OUT }}
+      # `provider` es de OpenRouter: OpenAI lo rechaza, así que con OpenAI va vacío.
+      LLM_LOCAL__EXTRA_BODY: ${{ inputs.proveedor == 'openai' && '{}' || '{"provider":{"data_collection":"deny"}}' }}
+      LLM_LOCAL__TOKEN_PARAM: ${{ inputs.razonamiento && 'max_completion_tokens' || 'max_tokens' }}
+      LLM_LOCAL__SEND_TEMPERATURE: ${{ inputs.razonamiento && 'false' || 'true' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Verifica llave y modelo
+        run: |
+          if [ -z "$LLM_LOCAL__API_KEY" ]; then
+            echo "::error::Falta el secreto de ${{ inputs.proveedor }} (OPENROUTER_API_KEY u OPENAI_API_KEY) en Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [ -z "$LLM_LOCAL__MODEL_SMALL" ]; then
+            echo "::error::Falta el modelo: pásalo en el input 'modelo' o define la variable LLM_MODEL del repo."
+            exit 1
+          fi
+      - name: Versión del código en el reporte
+        run: echo "GIT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
       - uses: astral-sh/setup-uv@v5
         with: { enable-cache: true }
       - run: uv sync --group dev

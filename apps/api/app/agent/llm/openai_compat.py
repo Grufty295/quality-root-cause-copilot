@@ -109,9 +109,10 @@ class OpenAICompatibleClient:
             **self._settings.extra_body,
             "model": request.model,
             "messages": [m.to_openai() for m in request.messages],
-            "temperature": request.temperature,
-            "max_tokens": request.max_tokens,
+            self._settings.token_param: request.max_tokens,
         }
+        if self._settings.send_temperature:
+            body["temperature"] = request.temperature
         if request.tools:
             body["tools"] = [t.to_openai() for t in request.tools]
         if request.json_mode and self._settings.json_mode and not request.tools:

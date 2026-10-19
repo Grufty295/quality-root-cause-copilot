@@ -25,8 +25,9 @@ Además:
 - **`evals-live.yml` se probó en Actions el 19 oct 2026** (3 casos, `con_enlaces`, 1 repetición): 3 corridas válidas, 0 inválidas,
   0 salidas inseguras, costo US$0.054 estimado / US$0.050 reportado, p50 238 s con concurrencia 3. Fue una prueba de que **el camino
   funciona**, no una medición de calidad: n = 3 (pass@1 0.67 = 2 de 3) no sostiene ninguna conclusión sobre el modelo, y no sustituye
-  al reporte completo de `evals/reportes/`. Descarga el modelo de embeddings (e5-large) en cada corrida, así que tarda. La corrida
-  no queda atada a un commit (`código sin GIT_SHA` en el reporte) mientras el workflow no pase `GIT_SHA`.
+  al reporte completo de `evals/reportes/`. Descarga el modelo de embeddings (e5-large) en cada corrida, así que tarda. Esa primera
+  corrida no quedó atada a un commit (`código sin GIT_SHA` en el reporte). El workflow ya exporta `GIT_SHA` (7 caracteres del commit);
+  falta confirmarlo en la siguiente corrida real.
   Antes de funcionar falló dos veces, por razones que solo una corrida real podía mostrar: (1) el seed y el eval usaban rutas del
   contenedor (`/workspace/data/seed`, `/workspace/evals`) que no existen en el runner; se pasan `--data` y `--evals` con
   `${{ github.workspace }}`; (2) `--variants base` no existe (las válidas son `sin_enlaces` y `con_enlaces`); el mismo error estaba en
@@ -70,7 +71,10 @@ tampoco lleven secretos antes del primer commit. Sin ese archivo la capa 2 falla
 
 ## Secretos y variables que pide GitHub
 
-Solo para `evals-live`: secreto `OPENROUTER_API_KEY`; variables `LLM_MODEL`, `LLM_PRICE_IN`, `LLM_PRICE_OUT`.
+Solo para `evals-live`: secreto `OPENROUTER_API_KEY` (proveedor `openrouter`) u `OPENAI_API_KEY` (proveedor `openai`), según lo que se elija
+al lanzarlo. Modelo y precios salen de los inputs de la corrida; si van vacíos, de las variables `LLM_MODEL`, `LLM_PRICE_IN`, `LLM_PRICE_OUT`.
+Con OpenAI el workflow vacía `EXTRA_BODY` (el campo `provider` es de OpenRouter). Para modelos de razonamiento (o-series, GPT-5) se marca
+el input `razonamiento`. Esta variante no se ha ejecutado todavía.
 
 ## Correr lo mismo en local
 
