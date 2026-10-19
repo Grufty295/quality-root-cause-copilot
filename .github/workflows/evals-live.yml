@@ -1,6 +1,7 @@
 # Cambio de modelo o de prompt con efecto en calidad: corrida REAL, a mano. Gasta tokens (~US$0.15 el humo).
 # Necesita el secreto OPENROUTER_API_KEY y las variables LLM_MODEL, LLM_PRICE_IN, LLM_PRICE_OUT. No corre en PR para no pagar por cada push.
-# SIN PROBAR: escrito contra los comandos del Makefile; ajusta variables LLM_* a tu .env.example.
+# Rutas: el código usa /workspace/... (montaje del compose); en el runner se pasan --data y --evals explícitos.
+# 1a corrida en Actions (19 oct 2026): fallo por /workspace/data/seed inexistente -> corregido. Escrito contra los comandos del Makefile; ajusta variables LLM_* a tu .env.example.
 name: evals-live
 
 on:
@@ -50,9 +51,9 @@ jobs:
             psql -q -v ON_ERROR_STOP=1 -h localhost -U postgres -d eightd -f "$f"
           done
       - name: Seed (descarga el modelo de embeddings)
-        run: uv run python -m app.seed
+        run: uv run python -m app.seed --data "${{ github.workspace }}/data/seed"
       - name: Eval del agente
-        run: uv run python -m app.evalkit.agent --name ci-humo --casos "${{ inputs.casos }}" --variants base --repeats 1 --concurrency 3 --out-dir "${{ github.workspace }}/reporte"
+        run: uv run python -m app.evalkit.agent --name ci-humo --evals "${{ github.workspace }}/evals" --casos "${{ inputs.casos }}" --variants con_enlaces --repeats 1 --concurrency 3 --out-dir "${{ github.workspace }}/reporte"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
