@@ -1,4 +1,4 @@
-"""Detección básica de prompt injection en texto no confiable.
+﻿"""Detección básica de prompt injection en texto no confiable.
 
 Heurística por patrones, en español e inglés. Es la capa débil de la defensa y se
 declara así: un atacante con paciencia la rodea. Lo que sostiene la seguridad es la
@@ -201,7 +201,7 @@ def _deobfuscate(text: str) -> str:
 
 
 def detect_injection(text: str) -> list[str]:
-    views = {fold(text), _deobfuscate(text)}
+    views: set[str] = set()
     found: list[str] = []
     for view in views:
         for name, pattern in _PATTERNS:
