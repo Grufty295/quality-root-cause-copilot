@@ -39,6 +39,8 @@ services:
       LANGFUSE_HOST: ${LANGFUSE_HOST:-}
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_RELEASE: ${GIT_SHA:-}
+      OTEL_SERVICE_NAME: agente-8d
     volumes:
       - ./data:/workspace/data
       - ./evals:/workspace/evals

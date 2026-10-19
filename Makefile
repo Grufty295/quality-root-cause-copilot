@@ -2,16 +2,11 @@ COMPOSE ?= docker compose -f docker-compose.yml -f docker-compose.langfuse.yml
 PROJECT := arnes-8d
 SEED    ?= 42
 
-# Ajusta estos dos si tus modulos se llaman distinto.
-# El seed vive en apps/api/app/seed, no en data/: el generador borra data/seed completo.
-SEED_CMD  ?= python -m app.seed
-EVALS_CMD ?= python -m evals.run
-
 LANGFUSE_VOLUMES := langfuse_postgres_data langfuse_clickhouse_data langfuse_clickhouse_logs langfuse_minio_data langfuse_redis_data
 LANGFUSE_SERVICES := langfuse-web langfuse-worker langfuse-clickhouse langfuse-minio langfuse-redis langfuse-postgres
 
 .DEFAULT_GOAL := help
-.PHONY: help init init-langfuse up up-d dev local observability down reset-db reset-observability logs ps psql migrate test seed evals eval-retrieval eval-agent eval-smoke eval-baseline eval-semantic eval-labels eval-gates build-evals llm-diagnose audit types
+.PHONY: help init init-langfuse up up-d dev local observability down reset-db reset-observability logs ps psql migrate test seed eval-retrieval eval-agent eval-baseline eval-semantic eval-gates build-evals llm-diagnose audit
 
 help: ## Lista los comandos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -82,32 +77,22 @@ test: ## Corre pytest contra una base aparte (eightd_test), nunca la de la demo
 	$(COMPOSE) exec api sh -c 'export DATABASE_URL="$${DATABASE_URL%/*}/eightd_test" && alembic upgrade head && pytest -q'
 
 seed: ## Carga catalogos, usuarios de demo y corpus (los CSV se generan con data/generator/generate.py)
-	$(COMPOSE) exec api $(SEED_CMD)
-
-evals: ## Corre la suite de evals y genera el reporte
-	$(COMPOSE) exec api $(EVALS_CMD)
+	$(COMPOSE) exec api python -m app.seed
 
 eval-retrieval: ## Recuperación: Recall/MRR/nDCG por búsqueda y modo (dev). Con TEST=1 incluye la partición sellada
 	$(COMPOSE) exec api python -m app.evalkit.retrieval $(if $(TEST),--test)
 
-eval-agent: ## Agente D4 vs esperado (dev; base y enlace; 3 repeticiones). GASTA tokens. ARGS="--repeats 1 --casos EV-01"
+eval-agent: ## Agente vs esperado (dev, 3 repeticiones). GASTA tokens. ARGS="--name dev-v6 --variants con_enlaces --repeats 3 --concurrency 3" o "--casos EV-01,EV-05,EV-09 --repeats 1" para un humo
 	$(COMPOSE) exec api python -m app.evalkit.agent $(ARGS)
-
-eval-smoke: ## Humo del eval: 3 casos (uno por episodio), base, 1 repetición, concurrencia 3. ~10 min, < $0.15
-	$(COMPOSE) exec api python -m app.evalkit.agent --name humo-$$(date +%H%M) --casos EV-01,EV-05,EV-09 --variants base --repeats 1 --concurrency 3
-	@echo "Revisa arriba 'Concurrencia pedida 3, observada N' en el reporte: N=3 confirma que corren en paralelo."
 
 eval-baseline: ## Línea base trivial (NCR más parecida con 8D) por partición; no llama al modelo
 	$(COMPOSE) exec api python -m app.evalkit.baseline
 
-eval-semantic: ## Juez LLM (DeepEval + Ragas) sobre las corridas del agente. GASTA tokens. ARGS="--max-runs 6 --metrics citas --langfuse"
+eval-semantic: ## Juez LLM (DeepEval + Ragas) sobre las corridas del agente. GASTA tokens. ARGS="--max-runs 6 --metrics citas" (o "--export-labels 40" para la muestra a etiquetar a mano)
 	$(COMPOSE) exec api python -m app.evalkit.semantic $(ARGS)
 
-eval-labels: ## Muestra de N hechos (sin el juicio del juez) para etiquetar a mano en data/etiquetas/. N=40
-	$(COMPOSE) exec api python -m app.evalkit.semantic --export-labels $(or $(N),40)
-
-eval-gates: ## Gates bloqueantes sobre los reportes ya generados (no llama al modelo). VARIANT=enlace SPLIT=all
-	$(COMPOSE) exec api python -m app.evalkit.gates --variant $(or $(VARIANT),base) --split $(or $(SPLIT),dev)
+eval-gates: ## Gates bloqueantes sobre los reportes ya generados (no llama al modelo). VARIANT=con_enlaces SPLIT=all
+	$(COMPOSE) exec api python -m app.evalkit.gates --variant $(or $(VARIANT),con_enlaces) --split $(or $(SPLIT),dev)
 
 build-evals: ## Reconstruye y actualiza la API con DeepEval, Ragas y Langfuse y el commit actual
 	GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null) UV_EXTRA_GROUPS="--group evals --group observabilidad" $(COMPOSE) up --build -d api
@@ -117,6 +102,3 @@ llm-diagnose: ## Por qué falla la llamada al modelo: config efectiva, key, prov
 
 audit: ## Verifica la cadena de hashes del log de auditoria e imprime el hash de la cabeza
 	$(COMPOSE) exec db sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT * FROM audit_verify()"'
-
-types: ## Regenera tipos TS desde el OpenAPI (la API debe estar arriba)
-	cd apps/web && npx openapi-typescript http://localhost:8000/openapi.json -o src/api-types.ts
