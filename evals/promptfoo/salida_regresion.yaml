@@ -1,0 +1,8 @@
+# Regresión de los guardrails de salida: culpa y cierre de v1 y v2 (ya vistos). Debe pasar 100 %.
+description: "Guardrails de salida: regresión"
+prompts:
+  - "{{texto}}"
+providers:
+  - id: file://providers/controles.py
+    label: controles-deterministas
+tests: file://gen_salida.py:generate_regresion

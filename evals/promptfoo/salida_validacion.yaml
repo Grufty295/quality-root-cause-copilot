@@ -1,0 +1,8 @@
+# Validación v3 de los guardrails de salida (fresca al medirse, mismo autor). Umbral de no regresión, no de calidad.
+description: "Guardrails de salida: validación v3 (estimación)"
+prompts:
+  - "{{texto}}"
+providers:
+  - id: file://providers/controles.py
+    label: controles-deterministas
+tests: file://gen_salida.py:generate_validacion

@@ -1,0 +1,9 @@
+# Validación v2: ataques escritos después de congelar el detector, con sesgo declarado (heldout_v2.py).
+# La tasa es una estimación optimista; no se exige 100 %. El umbral es no regresión.
+description: "Validación v2 del detector de inyección (estimación, no garantía)"
+prompts:
+  - "{{texto}}"
+providers:
+  - id: file://providers/controles.py
+    label: controles-deterministas
+tests: file://gen_validacion.py:generate_tests

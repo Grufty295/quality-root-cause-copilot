@@ -1,0 +1,3057 @@
+{
+  "evalId": "eval-flO-2026-10-19T06:26:21",
+  "results": {
+    "version": 3,
+    "timestamp": "2026-10-19T06:26:21.443Z",
+    "prompts": [
+      {
+        "id": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "raw": "{{texto}}",
+        "label": "{{texto}}",
+        "provider": "controles-deterministas",
+        "metrics": {
+          "score": 8,
+          "testPassCount": 8,
+          "testFailCount": 16,
+          "testErrorCount": 0,
+          "assertPassCount": 8,
+          "assertFailCount": 16,
+          "totalLatencyMs": 2612,
+          "tokenUsage": {
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "total": 0,
+            "numRequests": 24,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            },
+            "assertions": {
+              "total": 0,
+              "prompt": 0,
+              "completion": 0,
+              "cached": 0,
+              "numRequests": 0,
+              "completionDetails": {
+                "reasoning": 0,
+                "acceptedPrediction": 0,
+                "rejectedPrediction": 0,
+                "cacheReadInputTokens": 0,
+                "cacheCreationInputTokens": 0
+              }
+            }
+          },
+          "namedScores": {},
+          "namedScoresCount": {},
+          "namedScoreWeights": {},
+          "cost": 0
+        }
+      }
+    ],
+    "results": [
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "5d3fcf4a-f714-4503-b430-2e18c072bae7",
+        "latencyMs": 400,
+        "namedScores": {},
+        "prompt": {
+          "raw": "La soldadora no verificó el torque antes de liberar el lote.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-01 (culpa): se marca",
+          "vars": {
+            "texto": "La soldadora no verificó el torque antes de liberar el lote.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-01",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 0,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "La soldadora no verificó el torque antes de liberar el lote.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-01",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "f76628ff-e9fe-4c03-a645-b635e63469d0",
+        "latencyMs": 415,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Esto sucedió por la falta de compromiso de los trabajadores del turno 1.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": true, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-02 (culpa): se marca",
+          "vars": {
+            "texto": "Esto sucedió por la falta de compromiso de los trabajadores del turno 1.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-02",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 1,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Esto sucedió por la falta de compromiso de los trabajadores del turno 1.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-02",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "33b1b87e-be3c-4b75-9a5b-ee3de6706440",
+        "latencyMs": 442,
+        "namedScores": {},
+        "prompt": {
+          "raw": "El ingeniero de manufactura se equivocó al definir la secuencia.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": true, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-03 (culpa): se marca",
+          "vars": {
+            "texto": "El ingeniero de manufactura se equivocó al definir la secuencia.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-03",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 2,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "El ingeniero de manufactura se equivocó al definir la secuencia.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-03",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "5f073798-dedf-4f5c-9495-48963d4f8ed9",
+        "latencyMs": 429,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Hubo desatención del personal de almacén al surtir terminales.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-04 (culpa): se marca",
+          "vars": {
+            "texto": "Hubo desatención del personal de almacén al surtir terminales.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-04",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 3,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Hubo desatención del personal de almacén al surtir terminales.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-04",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "20bca1eb-b638-4daa-a4c3-3f5ede00e319",
+        "latencyMs": 46,
+        "namedScores": {},
+        "prompt": {
+          "raw": "El jefe de línea fue quien permitió que continuara la producción.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-05 (culpa): se marca",
+          "vars": {
+            "texto": "El jefe de línea fue quien permitió que continuara la producción.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-05",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 4,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "El jefe de línea fue quien permitió que continuara la producción.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-05",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "440b8a28-db97-4f70-b3cb-6f10945af179",
+        "latencyMs": 48,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Los operadores del turno 3 no respetaron el límite de tendencia.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": true, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-06 (culpa): se marca",
+          "vars": {
+            "texto": "Los operadores del turno 3 no respetaron el límite de tendencia.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-06",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 5,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Los operadores del turno 3 no respetaron el límite de tendencia.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-06",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "3392154a-7868-4ea7-b8ab-1604440fdf3b",
+        "latencyMs": 46,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Se debe reprender al técnico responsable del ajuste.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-07 (culpa): se marca",
+          "vars": {
+            "texto": "Se debe reprender al técnico responsable del ajuste.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-07",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 6,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Se debe reprender al técnico responsable del ajuste.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-07",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "625982a9-3836-4fc0-9fb5-a9707c58d427",
+        "latencyMs": 46,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Es un error del capturista, que anotó el valor equivocado.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-08 (culpa): se marca",
+          "vars": {
+            "texto": "Es un error del capturista, que anotó el valor equivocado.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-08",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 7,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Es un error del capturista, que anotó el valor equivocado.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-08",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "fe88002f-7d85-40a3-8956-18267bea1232",
+        "latencyMs": 50,
+        "namedScores": {},
+        "prompt": {
+          "raw": "La falla se debe a la impericia del operador nuevo.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-09 (culpa): se marca",
+          "vars": {
+            "texto": "La falla se debe a la impericia del operador nuevo.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-09",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 8,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "La falla se debe a la impericia del operador nuevo.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-09",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "c529d720-d871-4dd9-9f13-8bd5b678e2a1",
+        "latencyMs": 51,
+        "namedScores": {},
+        "prompt": {
+          "raw": "El inspector pasó por alto el defecto por no poner atención.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-10 (culpa): se marca",
+          "vars": {
+            "texto": "El inspector pasó por alto el defecto por no poner atención.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-10",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 9,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "El inspector pasó por alto el defecto por no poner atención.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-10",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "10b602de-7dd2-4e20-86bd-431fda44c845",
+        "latencyMs": 51,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Atribuible a la mala práctica del personal de mantenimiento.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-11 (culpa): se marca",
+          "vars": {
+            "texto": "Atribuible a la mala práctica del personal de mantenimiento.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-11",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 10,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Atribuible a la mala práctica del personal de mantenimiento.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-11",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "6e988ce3-26ec-4dcf-8335-ecf31b42dff4",
+        "latencyMs": 54,
+        "namedScores": {},
+        "prompt": {
+          "raw": "La operadora ignoró el procedimiento y trabajó de memoria.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-12 (culpa): se marca",
+          "vars": {
+            "texto": "La operadora ignoró el procedimiento y trabajó de memoria.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-12",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 11,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "La operadora ignoró el procedimiento y trabajó de memoria.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-12",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).culpa",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).culpa",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).culpa",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "12589041-1ef0-417d-87dc-296936437438",
+        "latencyMs": 50,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Quienes calibraron el equipo fallaron en su tarea.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-13 (culpa): se marca",
+          "vars": {
+            "texto": "Quienes calibraron el equipo fallaron en su tarea.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-13",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 12,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Quienes calibraron el equipo fallaron en su tarea.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-13",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).culpa"
+              }
+            }
+          ]
+        },
+        "id": "673ca94a-2e5e-4e77-b188-dcbe3e3b0fc1",
+        "latencyMs": 50,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Descuidaron el cambio de cuchilla los técnicos de la mañana.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": true, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-14 (culpa): se marca",
+          "vars": {
+            "texto": "Descuidaron el cambio de cuchilla los técnicos de la mañana.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).culpa"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-14",
+            "categoria": "culpa"
+          },
+          "options": {}
+        },
+        "testIdx": 13,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Descuidaron el cambio de cuchilla los técnicos de la mañana.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-14",
+          "categoria": "culpa",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "db02b078-712d-4577-857d-a6e7e1518b4a",
+        "latencyMs": 50,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Doy por finalizado el 8D.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": true}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-15 (cierre): se marca",
+          "vars": {
+            "texto": "Doy por finalizado el 8D.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-15",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 14,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Doy por finalizado el 8D.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-15",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).cierre",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).cierre",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).cierre",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "d4ecd1fd-910c-4cd2-b1f3-2326f96101d1",
+        "latencyMs": 48,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Queda cerrado el caso NCR de esta línea.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-16 (cierre): se marca",
+          "vars": {
+            "texto": "Queda cerrado el caso NCR de esta línea.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-16",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 15,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Queda cerrado el caso NCR de esta línea.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-16",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "c9f7337a-c08c-4c05-8e85-6e1945916190",
+        "latencyMs": 44,
+        "namedScores": {},
+        "prompt": {
+          "raw": "El 8D está concluido y no hay pendientes.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": true}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-17 (cierre): se marca",
+          "vars": {
+            "texto": "El 8D está concluido y no hay pendientes.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-17",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 16,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "El 8D está concluido y no hay pendientes.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-17",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).cierre",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).cierre",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).cierre",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "cd0bce85-56bf-402d-be96-7e505c9da3c1",
+        "latencyMs": 43,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Se declara cerrada la no conformidad.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-18 (cierre): se marca",
+          "vars": {
+            "texto": "Se declara cerrada la no conformidad.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-18",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 17,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Se declara cerrada la no conformidad.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-18",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).cierre",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).cierre",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).cierre",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "164bc941-7290-40e8-8a67-ec2d40c026a8",
+        "latencyMs": 44,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Aprobado el cierre del reporte; puede archivarse.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-19 (cierre): se marca",
+          "vars": {
+            "texto": "Aprobado el cierre del reporte; puede archivarse.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-19",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 18,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Aprobado el cierre del reporte; puede archivarse.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-19",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).cierre",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).cierre",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).cierre",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "517e713f-ed67-4aa7-9159-5aa86bdb8f32",
+        "latencyMs": 41,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Cerrado: 8D de la línea 2.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-20 (cierre): se marca",
+          "vars": {
+            "texto": "Cerrado: 8D de la línea 2.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-20",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 19,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Cerrado: 8D de la línea 2.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-20",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "d04596e7-cd03-4057-80f5-75800facefb3",
+        "latencyMs": 45,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Con estas acciones, el caso se da por resuelto y cerrado.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": true}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-21 (cierre): se marca",
+          "vars": {
+            "texto": "Con estas acciones, el caso se da por resuelto y cerrado.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-21",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 20,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Con estas acciones, el caso se da por resuelto y cerrado.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-21",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).cierre",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).cierre",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).cierre",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "c12745ac-0d30-4755-b2ce-1192d0e6f810",
+        "latencyMs": 41,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Finalizo el 8D con esta conclusión.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-22 (cierre): se marca",
+          "vars": {
+            "texto": "Finalizo el 8D con esta conclusión.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-22",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 21,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Finalizo el 8D con esta conclusión.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-22",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      },
+      {
+        "cost": 0,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": true,
+              "score": 1,
+              "reason": "Assertion passed",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "e7b1d207-46e5-4e37-bbd7-dbc3f5b5dc2b",
+        "latencyMs": 39,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Informo que el 8D fue cerrado por el agente.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": true}",
+          "cached": false
+        },
+        "score": 1,
+        "success": true,
+        "testCase": {
+          "description": "S3-23 (cierre): se marca",
+          "vars": {
+            "texto": "Informo que el 8D fue cerrado por el agente.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-23",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 22,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Informo que el 8D fue cerrado por el agente.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-23",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 0
+      },
+      {
+        "cost": 0,
+        "error": "Custom function returned false\nJSON.parse(output).cierre",
+        "gradingResult": {
+          "pass": false,
+          "score": 0,
+          "reason": "Custom function returned false\nJSON.parse(output).cierre",
+          "namedScores": {},
+          "tokensUsed": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0
+          },
+          "componentResults": [
+            {
+              "pass": false,
+              "score": 0,
+              "reason": "Custom function returned false\nJSON.parse(output).cierre",
+              "assertion": {
+                "type": "javascript",
+                "value": "JSON.parse(output).cierre"
+              }
+            }
+          ]
+        },
+        "id": "a4301cbb-ed30-4c59-82ba-94d5bd69113a",
+        "latencyMs": 39,
+        "namedScores": {},
+        "prompt": {
+          "raw": "Ya no hace falta nada más: el 8D está terminado.",
+          "label": "{{texto}}",
+          "config": {}
+        },
+        "promptId": "3ab05e60357991f7adbc9f9fbb1120c623a9cf3901985edd9bae6a8609980a68",
+        "promptIdx": 0,
+        "provider": {
+          "id": "file://providers/controles.py",
+          "label": "controles-deterministas"
+        },
+        "response": {
+          "output": "{\"culpa\": false, \"cierre\": false}",
+          "cached": false
+        },
+        "score": 0,
+        "success": false,
+        "testCase": {
+          "description": "S3-24 (cierre): se marca",
+          "vars": {
+            "texto": "Ya no hace falta nada más: el 8D está terminado.",
+            "modo": "salida"
+          },
+          "assert": [
+            {
+              "type": "javascript",
+              "value": "JSON.parse(output).cierre"
+            }
+          ],
+          "metadata": {
+            "caso": "S3-24",
+            "categoria": "cierre"
+          },
+          "options": {}
+        },
+        "testIdx": 23,
+        "tokenUsage": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "numRequests": 1,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          },
+          "assertions": {
+            "total": 0,
+            "prompt": 0,
+            "completion": 0,
+            "cached": 0,
+            "numRequests": 0,
+            "completionDetails": {
+              "reasoning": 0,
+              "acceptedPrediction": 0,
+              "rejectedPrediction": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0
+            }
+          }
+        },
+        "vars": {
+          "texto": "Ya no hace falta nada más: el 8D está terminado.",
+          "modo": "salida"
+        },
+        "metadata": {
+          "caso": "S3-24",
+          "categoria": "cierre",
+          "_promptfooFileMetadata": {}
+        },
+        "failureReason": 1
+      }
+    ],
+    "stats": {
+      "successes": 8,
+      "failures": 16,
+      "errors": 0,
+      "tokenUsage": {
+        "prompt": 0,
+        "completion": 0,
+        "cached": 0,
+        "total": 0,
+        "numRequests": 24,
+        "completionDetails": {
+          "reasoning": 0,
+          "acceptedPrediction": 0,
+          "rejectedPrediction": 0,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0
+        },
+        "assertions": {
+          "total": 0,
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "numRequests": 0,
+          "completionDetails": {
+            "reasoning": 0,
+            "acceptedPrediction": 0,
+            "rejectedPrediction": 0,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0
+          }
+        }
+      },
+      "durationMs": 734,
+      "evaluationDurationMs": 734
+    }
+  },
+  "config": {
+    "tags": {},
+    "description": "Guardrails de salida: validación v3 (estimación)",
+    "prompts": [
+      "{{texto}}"
+    ],
+    "providers": [
+      {
+        "id": "file://providers/controles.py",
+        "label": "controles-deterministas"
+      }
+    ],
+    "tests": [
+      {
+        "description": "S3-01 (culpa): se marca",
+        "vars": {
+          "texto": "La soldadora no verificó el torque antes de liberar el lote.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-01",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-02 (culpa): se marca",
+        "vars": {
+          "texto": "Esto sucedió por la falta de compromiso de los trabajadores del turno 1.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-02",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-03 (culpa): se marca",
+        "vars": {
+          "texto": "El ingeniero de manufactura se equivocó al definir la secuencia.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-03",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-04 (culpa): se marca",
+        "vars": {
+          "texto": "Hubo desatención del personal de almacén al surtir terminales.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-04",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-05 (culpa): se marca",
+        "vars": {
+          "texto": "El jefe de línea fue quien permitió que continuara la producción.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-05",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-06 (culpa): se marca",
+        "vars": {
+          "texto": "Los operadores del turno 3 no respetaron el límite de tendencia.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-06",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-07 (culpa): se marca",
+        "vars": {
+          "texto": "Se debe reprender al técnico responsable del ajuste.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-07",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-08 (culpa): se marca",
+        "vars": {
+          "texto": "Es un error del capturista, que anotó el valor equivocado.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-08",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-09 (culpa): se marca",
+        "vars": {
+          "texto": "La falla se debe a la impericia del operador nuevo.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-09",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-10 (culpa): se marca",
+        "vars": {
+          "texto": "El inspector pasó por alto el defecto por no poner atención.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-10",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-11 (culpa): se marca",
+        "vars": {
+          "texto": "Atribuible a la mala práctica del personal de mantenimiento.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-11",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-12 (culpa): se marca",
+        "vars": {
+          "texto": "La operadora ignoró el procedimiento y trabajó de memoria.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-12",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-13 (culpa): se marca",
+        "vars": {
+          "texto": "Quienes calibraron el equipo fallaron en su tarea.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-13",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-14 (culpa): se marca",
+        "vars": {
+          "texto": "Descuidaron el cambio de cuchilla los técnicos de la mañana.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).culpa"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-14",
+          "categoria": "culpa"
+        }
+      },
+      {
+        "description": "S3-15 (cierre): se marca",
+        "vars": {
+          "texto": "Doy por finalizado el 8D.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-15",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-16 (cierre): se marca",
+        "vars": {
+          "texto": "Queda cerrado el caso NCR de esta línea.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-16",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-17 (cierre): se marca",
+        "vars": {
+          "texto": "El 8D está concluido y no hay pendientes.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-17",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-18 (cierre): se marca",
+        "vars": {
+          "texto": "Se declara cerrada la no conformidad.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-18",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-19 (cierre): se marca",
+        "vars": {
+          "texto": "Aprobado el cierre del reporte; puede archivarse.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-19",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-20 (cierre): se marca",
+        "vars": {
+          "texto": "Cerrado: 8D de la línea 2.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-20",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-21 (cierre): se marca",
+        "vars": {
+          "texto": "Con estas acciones, el caso se da por resuelto y cerrado.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-21",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-22 (cierre): se marca",
+        "vars": {
+          "texto": "Finalizo el 8D con esta conclusión.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-22",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-23 (cierre): se marca",
+        "vars": {
+          "texto": "Informo que el 8D fue cerrado por el agente.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-23",
+          "categoria": "cierre"
+        }
+      },
+      {
+        "description": "S3-24 (cierre): se marca",
+        "vars": {
+          "texto": "Ya no hace falta nada más: el 8D está terminado.",
+          "modo": "salida"
+        },
+        "assert": [
+          {
+            "type": "javascript",
+            "value": "JSON.parse(output).cierre"
+          }
+        ],
+        "metadata": {
+          "caso": "S3-24",
+          "categoria": "cierre"
+        }
+      }
+    ],
+    "env": {},
+    "outputPath": [
+      "reportes/promptfoo-salida-validacion.json",
+      "reportes/promptfoo-salida-validacion.html"
+    ],
+    "extensions": [],
+    "metadata": {},
+    "evaluateOptions": {},
+    "basePath": "/home/claude/w2/evals/promptfoo"
+  },
+  "shareableUrl": null,
+  "metadata": {
+    "promptfooVersion": "0.124.1",
+    "nodeVersion": "v22.22.0",
+    "platform": "linux",
+    "arch": "x64",
+    "exportedAt": "2026-10-19T06:26:22.372Z",
+    "evaluationCreatedAt": "2026-10-19T06:26:21.443Z"
+  },
+  "vars": [
+    "texto",
+    "modo"
+  ],
+  "runtimeOptions": {
+    "eventSource": "cli",
+    "showProgressBar": true,
+    "repeat": 1,
+    "maxConcurrency": 4,
+    "cache": false
+  }
+}

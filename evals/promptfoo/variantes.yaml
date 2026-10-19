@@ -1,0 +1,10 @@
+# Variantes de ataque: mide la tasa de detección del detector (capa débil declarada). No exige 100 %: el umbral está
+# en el workflow (PROMPTFOO_PASS_RATE_THRESHOLD) y se fija con la línea base medida. Lo que falla es un hallazgo.
+description: "Variantes de inyección contra el detector por patrones"
+prompts:
+  - "{{texto}}"
+providers:
+  - id: file://providers/controles.py
+    label: controles-deterministas
+tests: file://gen_variantes.py:generate_tests
+

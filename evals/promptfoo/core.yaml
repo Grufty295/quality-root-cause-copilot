@@ -1,0 +1,10 @@
+# Tolerancia cero: todo debe pasar. Corre en CI (sin modelo, sin costo).
+#   Ver docs/seguridad/promptfoo.md (comandos exactos).
+description: "Controles deterministas: casos adversariales del dataset y falsos positivos"
+prompts:
+  - "{{texto}}"
+providers:
+  - id: file://providers/controles.py
+    label: controles-deterministas
+tests: file://gen_core.py:generate_tests
+
