@@ -1,6 +1,6 @@
 """Eval del agente: corre D4 sobre los casos EV-xx y lo puntúa contra `esperado`.
 
-    docker compose exec api python -m app.evalkit.agent                      # dev, base + enlace, 3 repeticiones
+    docker compose exec api python -m app.evalkit.agent                      # dev, 3 repeticiones
     docker compose exec api python -m app.evalkit.agent --repeats 1 --casos EV-01,EV-05
     docker compose exec api python -m app.evalkit.agent --report-only        # rehace el reporte sin llamar al modelo
 
@@ -13,8 +13,8 @@ termina: si se corta, al volver a correr retoma donde se quedó (misma clave
 caso/variante/repetición). El reporte se rehace siempre desde ese archivo.
 
 Variantes:
-- `base`:   el agente como está.
-- `enlace`: con `expand_case_links` (NCR o 8D del top → D4 de ese 8D). Ver docs/evaluacion.md.
+- `sin_enlaces`: sin `expand_case_links`.
+- `con_enlaces`: con `expand_case_links` (NCR o 8D del top → D4 de ese 8D); es producción.
 """
 
 from __future__ import annotations
@@ -41,15 +41,12 @@ from app.evalkit.retrieval import DEFAULT_EVALS, DEFAULT_OUT, load_cases
 from app.evalkit.scoring import score_d4
 
 PLANT = "JRZ1"
-# Por variante: qué campos de AgentDeps cambian. `enlace_ctl` es exploratorio (post-hoc): prueba
-# `hybrid_wdoc` en `search_controls`, que en el eval de recuperación subió hit@5 de 0.50 a 0.75.
+# Por variante: qué campos de AgentDeps cambian. `PRODUCTION_VARIANT` es la configuración de producción.
 VARIANTS = {
-    "base": {"expand_case_links": False},
-    "enlace": {"expand_case_links": True},
-    "enlace_ctl": {"expand_case_links": True, "controls_mode": "hybrid_wdoc"},
-    "enlace_fix": {"expand_case_links": True},
-    "enlace_fix_cat": {"expand_case_links": True, "catalog_chars": 1400},
+    "sin_enlaces": {"expand_case_links": False},
+    "con_enlaces": {"expand_case_links": True},
 }
+PRODUCTION_VARIANT = "con_enlaces"
 _SHIFTS = {"T1": 1, "T2": 2, "T3": 3}
 
 
@@ -202,6 +199,8 @@ async def run_once(
         ],
         "content": content,
         "unsafe_output": unsafe_output(content),
+        # No bloquea: heurísticas de consistencia (ver app/agent/guardrails/diagnostics.py).
+        "diagnostics": consistency_diagnostics(content, record, ncr),
         # Texto de lo citado y de lo recuperado, para el juez (app/evalkit/semantic.py). Son
         # datos ficticios y el archivo queda local; con datos reales esto no se escribe.
         **evidence_for_judge(content, record),
@@ -256,6 +255,23 @@ def unsafe_output(content: Mapping[str, Any] | None) -> list[str]:
             ]
         ]
     return sorted({v.code for v in [*check_blame(texts), *check_closing(texts)]})
+
+
+def consistency_diagnostics(
+    content: Mapping[str, Any] | None, record: Any, ncr: Any
+) -> dict[str, Any]:
+    """Tarjetas sin ancla de caso y cifras sin respaldo en un D4. Solo informa.
+
+    El eval corre únicamente D4, así que la contradicción "sin dato" entre D2 y D4 no se mide
+    aquí: se registra como evento en las corridas del producto. Sin evidencia guardada (el
+    observador no la conservó) no hay contra qué comparar las cifras y no se reporta nada."""
+    if not content or record is None or not record.evidence:
+        return {}
+    from app.agent.guardrails.diagnostics import diagnose
+    from app.agent.prompts import case_block
+
+    sources = [case_block(ncr), *(v.get("texto") or "" for v in record.evidence.values())]
+    return diagnose(d2=None, d4=content, sources=sources)
 
 
 def evidence_for_judge(
@@ -389,6 +405,13 @@ def _pass_hat_k(rows: Sequence[Mapping[str, Any]]) -> tuple[float | None, int]:
     return _mean(_mean(v) for v in by_ep.values()), k
 
 
+def _diag_rate(rows: Sequence[Mapping[str, Any]], key: str) -> float | None:
+    """Fracción de corridas con al menos un hallazgo. Las corridas sin diagnóstico (sin contenido
+    o sin evidencia guardada) no cuentan ni a favor ni en contra."""
+    measured = [r["diagnostics"] for r in rows if r.get("diagnostics")]
+    return _mean(1.0 if d.get(key) else 0.0 for d in measured)
+
+
 def aggregate(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     groups: dict[tuple[str, str], list[Mapping[str, Any]]] = defaultdict(list)
     for r in rows:
@@ -460,6 +483,10 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
                     1.0 if r["score"].get("contradictions") else 0.0 for r in rs
                 ),
                 "unsafe_output_runs": sum(1 for r in rs if r.get("unsafe_output")),
+                # Diagnósticos de consistencia: no son gates, solo tasas para mirar tendencia.
+                "unanchored_cause_rate": _diag_rate(rs, "unanchored_causes"),
+                "ungrounded_number_rate": _diag_rate(rs, "ungrounded_numbers"),
+                "sin_dato_contradiction_rate": _diag_rate(rs, "sin_dato_contradictions"),
                 "invalid_rate": (len(all_rs) - len(rs)) / len(all_rs)
                 if all_rs
                 else None,
@@ -521,7 +548,7 @@ def breakdown(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def paired(
-    rows: Sequence[Mapping[str, Any]], a: str = "base", b: str = "enlace"
+    rows: Sequence[Mapping[str, Any]], a: str = "sin_enlaces", b: str = PRODUCTION_VARIANT
 ) -> dict[str, Any]:
     """Comparación caso a caso entre dos variantes (tasa de pass por caso).
 
@@ -616,6 +643,29 @@ def render_markdown(report: Mapping[str, Any]) -> str:
             "`abstención indebida`: se abstuvo en un caso que tiene causa esperada y no está "
             "etiquetado como de evidencia insuficiente. `abstención correcta` solo existe cuando el "
             "caso trae `evidencia_suficiente`. `salida insegura` debe ser 0: es un gate."
+        ),
+    ]
+    lines += [
+        "",
+        "## Consistencia (no bloquea)",
+        "",
+        "| variante | split | causa sin ancla de caso | cifras sin respaldo | \"sin dato\" contradictorio |",
+        "|---|---|---|---|---|",
+    ]
+    for a in report["aggregates"]:
+        lines.append(
+            f"| {a['variant']} | {a['split']} | {f(a.get('unanchored_cause_rate'), True)} "
+            f"| {f(a.get('ungrounded_number_rate'), True)} "
+            f"| {f(a.get('sin_dato_contradiction_rate'), True)} |"
+        )
+    lines += [
+        "",
+        (
+            "Fracción de corridas con al menos un hallazgo. `causa sin ancla`: una causa de ocurrencia "
+            "no cita la NCR, datos del caso ni un precedente. `cifras sin respaldo`: números que no "
+            "están en la NCR ni en las fuentes (incluye derivadas). `sin dato contradictorio`: D2 dice "
+            "que no hay dato sobre un documento que D4 cita; el eval corre solo D4 y no lo mide. "
+            "Son heurísticas con falsos positivos: sirven para revisar, no para aprobar."
         ),
     ]
     lines += [
@@ -1025,7 +1075,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         default="agente",
         help="prefijo de los archivos; mismo nombre = retoma",
     )
-    ap.add_argument("--variants", default="base,enlace")
+    ap.add_argument("--variants", default="sin_enlaces,con_enlaces")
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument(
         "--concurrency",

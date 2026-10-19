@@ -1,7 +1,7 @@
 """Eval semántico del D4 con DeepEval y Ragas, sobre las corridas del eval del agente.
 
     docker compose exec api python -m app.evalkit.semantic                    # base, rep 1, hasta 12 corridas
-    docker compose exec api python -m app.evalkit.semantic --variant enlace --max-runs 6
+    docker compose exec api python -m app.evalkit.semantic --variant con_enlaces --max-runs 6
     docker compose exec api python -m app.evalkit.semantic --metrics citas    # solo el juez de citas
     docker compose exec api python -m app.evalkit.semantic --export-labels 40 # muestra para etiquetar a mano
     make eval-semantic
@@ -600,7 +600,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument(
         "--name", default="agente", help="prefijo de las corridas del eval del agente"
     )
-    ap.add_argument("--variant", default="base")
+    ap.add_argument("--variant", default="con_enlaces")
     ap.add_argument("--reps", default="1", help="repeticiones a juzgar, p. ej. 1,2")
     ap.add_argument("--max-runs", type=int, default=12)
     ap.add_argument(

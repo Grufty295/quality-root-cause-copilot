@@ -14,8 +14,10 @@ Qué se mide y por qué así:
 - Abstención (`estado = evidencia_insuficiente`): `abstained` dice si el borrador se abstuvo.
   Si el caso declara `evidencia_suficiente` (falso = lo correcto es abstenerse), se mide
   `abstention_correct`; sin esa etiqueta, una abstención en un caso con causa esperada cuenta como
-  `false_abstention` (el agente tenía con qué y no lo usó). `pass` no cambia: sigue exigiendo la
-  causa esperada primero; una abstención con la causa correcta primero también pasa.
+  `false_abstention` (el agente tenía con qué y no lo usó). En un caso con evidencia suficiente,
+  `pass` sigue exigiendo la causa esperada primero (una abstención con la causa correcta primero
+  también pasa). En un caso que declara `evidencia_suficiente: false`, `pass` es abstenerse: forzar
+  una causa donde las fuentes no alcanzan es el error que se mide, acierte o no el código.
 - `contradictions`: cuántas causas traen evidencia contradictoria. No hay etiqueta de cuántas
   debería haber; sirve para ver si el modelo usa el campo o lo deja siempre vacío.
 
@@ -93,7 +95,9 @@ def score_d4(
 
     return {
         "generated": True,
-        "pass": rank == 1 and nd in acceptable_nd,
+        "pass": abstained
+        if sufficient is False
+        else (rank == 1 and nd in acceptable_nd),
         "rc_top1": rank == 1,
         "rc_top3": rank is not None,
         "rc_rank": rank,
@@ -109,7 +113,9 @@ def score_d4(
         "codes": codes,
         "nd": nd,
         "abstained": abstained,
-        "abstention_correct": None if sufficient is None else abstained == (not sufficient),
+        "abstention_correct": None
+        if sufficient is None
+        else abstained == (not sufficient),
         "false_abstention": abstained and sufficient is not False,
         "estado_downgraded": bool(content.get("estado_motivo")),
         "contradictions": sum(1 for c in causes if c.get("evidencia_contradictoria")),

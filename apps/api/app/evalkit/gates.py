@@ -1,7 +1,7 @@
 """Gates: condiciones que una versión del agente tiene que cumplir, sin importar el promedio.
 
-    docker compose exec api python -m app.evalkit.gates                   # dev, variante base
-    docker compose exec api python -m app.evalkit.gates --variant enlace
+    docker compose exec api python -m app.evalkit.gates                   # dev, variante de producción
+    docker compose exec api python -m app.evalkit.gates --variant con_enlaces
     make eval-gates                                                       # igual, desde el host
 
 Lee los reportes que ya existen (`agente.json`, `recuperacion.json`, `semantico.json`); no
@@ -116,7 +116,7 @@ def _retrieval_value(report: Mapping[str, Any], metric: str, split: str):
 def evaluate(
     reports: Mapping[str, Mapping[str, Any] | None],
     *,
-    variant: str = "base",
+    variant: str = "con_enlaces",
     split: str = "dev",
     gates: Sequence[Gate] = GATES,
 ) -> list[GateResult]:
@@ -186,7 +186,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--name", default="agente", help="prefijo del reporte del agente")
-    ap.add_argument("--variant", default="base")
+    ap.add_argument("--variant", default="con_enlaces")
     ap.add_argument("--split", default="dev", choices=("dev", "test", "all"))
     args = ap.parse_args(argv)
 

@@ -42,9 +42,6 @@ from app.retrieval.service import RetrievalService
 DEFAULT_EVALS = Path("/workspace/evals")
 DEFAULT_OUT = Path("/workspace/traces/evals")
 MODES: tuple[SearchMode, ...] = ("text", "vector", "hybrid")
-EXPERIMENTAL: tuple[SearchMode, ...] = ("hybrid_w", "hybrid_doc", "hybrid_wdoc")
-"""Variantes de la fusión para comparar contra `hybrid` (`--modes text,vector,hybrid,hybrid_w,...`).
-No son parte de los gates ni cambian lo que hace el agente."""
 KS = (5, 10)
 FETCH = max(KS)
 KINDS = {"cases": CASE_KINDS, "controls": CONTROL_KINDS}
@@ -163,7 +160,7 @@ def run_retrieval_eval(
     users: Callable[[str], Any],
     cases: Sequence[Mapping[str, Any]],
     qrels: Sequence[Qrel],
-    modes: Sequence[SearchMode] = MODES,
+    modes: Sequence[str] = MODES,
 ) -> list[CaseRow]:
     by_id = {c["caso_id"]: c for c in cases}
     rows: list[CaseRow] = []
@@ -172,14 +169,16 @@ def run_retrieval_eval(
         ncr = case["ncr"]
         query = build_query(ncr["descripcion"], ncr.get("numero_parte") or None)
         user = users(case["usuario"]["usuario_id"])
+        as_of = date.fromisoformat(case["as_of"])
+
         for mode in modes:
             hits = service.search(
                 user,
                 SearchQuery(
                     text=query,
                     top_k=FETCH,
-                    mode=mode,
-                    as_of=date.fromisoformat(case["as_of"]),
+                    mode=mode,  # type: ignore[arg-type]
+                    as_of=as_of,
                     kinds=KINDS[q.search],
                 ),
             )
@@ -393,7 +392,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     from app.retrieval.embedder import get_embedder
 
     modes = [x for x in args.modes.split(",") if x]
-    bad = set(modes) - set(MODES) - set(EXPERIMENTAL)
+    bad = set(modes) - set(MODES)
     if bad:
         raise SystemExit(f"modos desconocidos: {sorted(bad)}")
     wanted = DEV_EPISODES | (TEST_EPISODES if args.test else frozenset())

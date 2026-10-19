@@ -1,0 +1,38 @@
+# Prueba de carga: la API habla con un servidor falso de LLM (app/evalkit/stub_llm.py), no con un proveedor.
+#   docker compose -f docker-compose.yml -f docker-compose.loadtest.yml up -d --build api stub-llm
+# Para volver a la configuración normal: docker compose up -d api   (sin este archivo)
+#
+# Las NCR de la prueba usan una parte confidencial, así que todo va al destino local = el stub.
+# Las trazas se desactivan para no contaminar tu Langfuse con corridas falsas.
+services:
+  stub-llm:
+    build:
+      context: ./apps/api
+    command: ["python", "-m", "app.evalkit.stub_llm"]
+    environment:
+      PORT: "9000"
+      STUB_D2_S: ${STUB_D2_S:-40}
+      STUB_D4_S: ${STUB_D4_S:-100}
+      STUB_JITTER: ${STUB_JITTER:-0.2}
+      STUB_ERROR_RATE: ${STUB_ERROR_RATE:-0}
+      STUB_ERROR_STATUS: ${STUB_ERROR_STATUS:-429}
+    ports:
+      - "127.0.0.1:9000:9000"
+
+  api:
+    environment:
+      LLM_ALLOW_SIMULATED_LOCAL: "true"
+      LLM_LOCAL__SIMULATED: "true"
+      LLM_LOCAL__BASE_URL: http://stub-llm:9000/v1
+      LLM_LOCAL__API_KEY: stub
+      LLM_LOCAL__PROVIDER_LABEL: stub-carga
+      LLM_LOCAL__MODEL_SMALL: stub
+      LLM_LOCAL__MODEL_LARGE: stub
+      LLM_LOCAL__TIMEOUT_S: "300"
+      LLM_LOCAL__EXTRA_BODY: "{}"
+      TRACE_EXPORTER: ""
+      # Sin tope para medir la saturación real. Para probar la protección: ANALYZE_MAX_CONCURRENT=8 ANALYZE_MAX_PER_USER=2
+      ANALYZE_MAX_CONCURRENT: ${ANALYZE_MAX_CONCURRENT:-0}
+      ANALYZE_MAX_PER_USER: ${ANALYZE_MAX_PER_USER:-0}
+    depends_on:
+      - stub-llm

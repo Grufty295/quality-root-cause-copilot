@@ -292,7 +292,7 @@ async def diagnose_case(
     from app.agent.llm.config import get_llm_settings
     from app.agent.runtime import build_deps, close_deps
     from app.core.db import get_engine
-    from app.evalkit.agent import run_once
+    from app.evalkit.agent import PRODUCTION_VARIANT, run_once
     from app.evalkit.retrieval import load_cases
 
     cases, _, _ = load_cases(Path(evals_dir))
@@ -310,7 +310,7 @@ async def diagnose_case(
     engine = get_engine()
     deps = build_deps(engine)
     try:
-        row = await run_once(engine, deps, case, "base", 0)
+        row = await run_once(engine, deps, case, PRODUCTION_VARIANT, 0)
     finally:
         await close_deps(deps)
 
