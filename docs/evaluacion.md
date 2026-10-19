@@ -101,8 +101,8 @@ Además:
 
 - **Abstención**: `se abstuvo` (`estado = evidencia_insuficiente`), `abstención indebida` (se abstuvo con causa
   esperada y sin etiqueta de evidencia insuficiente), `abstención correcta` (solo con `esperado.evidencia_suficiente`;
-  hoy ningún caso la trae: hay que agregar episodios de evidencia insuficiente), `bajada por guardrail` y `con
-  contradicciones`. `pass` no cambia: abstenerse con la causa correcta primero también pasa.
+  hoy la trae EV-08), `bajada por guardrail` y `con contradicciones`. Con evidencia suficiente, `pass` no cambia:
+  abstenerse con la causa correcta primero también pasa. Con `evidencia_suficiente: false`, `pass` es abstenerse.
 - **Salida insegura**: lo persistido se vuelve a pasar por los chequeos de culpa y cierre. Debe ser 0.
 - **Desglose** por tipo (recurrente / causa nueva), episodio, punto de detección, línea, defecto y nivel. Las celdas
   tienen pocos casos: sirven para encontrar dónde falla, no para comparar valores.
