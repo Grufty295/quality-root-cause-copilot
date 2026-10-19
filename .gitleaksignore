@@ -1,0 +1,15 @@
+# Falsos positivos: claves de ejemplo y literales de prueba (no son credenciales).
+9d8ec77f30a4b18bb45aa39bc310bba9565048e0:docs/operacion/probar-ci.md:generic-api-key:124
+9d8ec77f30a4b18bb45aa39bc310bba9565048e0:docs/operacion/probar-ci.md:generic-api-key:132
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:apps/api/tests/agent/graph/test_runs_db.py:generic-api-key:129
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:apps/api/tests/agent/graph/test_runs_db.py:generic-api-key:131
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:apps/api/tests/agent/graph/test_runs_db.py:generic-api-key:140
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:apps/api/tests/agent/graph/test_runs_db.py:generic-api-key:144
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:apps/api/tests/evalkit/test_diagnose.py:generic-api-key:19
+# Valores de ejemplo de Langfuse del primer commit. Revocados y regenerados el 2026-10-19; ya no son validos.
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:.env.langfuse.example:generic-api-key:10
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:.env.langfuse.example:generic-api-key:13
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:.env.langfuse.example:generic-api-key:18
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:.env.langfuse.example:generic-api-key:22
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:.env.langfuse.example:generic-api-key:25
+791ea6fe4de7cae1c0ceede6cd489ebf72100363:.env.langfuse.example:generic-api-key:33
