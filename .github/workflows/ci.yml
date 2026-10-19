@@ -182,9 +182,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # El binario y no la acción: la acción escanea solo el rango del push y falla con el primer commit del repo
+      # (no existe `<commit>^`). Aquí se revisa todo el historial (fetch-depth 0).
+      - name: gitleaks sobre el historial completo
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar xz gitleaks
+          ./gitleaks detect --source . --redact -v --exit-code 1
 
   dependencias:
     name: Dependencias con vulnerabilidades conocidas
@@ -199,7 +202,7 @@ jobs:
         working-directory: apps/api
         run: |
           uv export --no-hashes --no-emit-project --group dev -o /tmp/req.txt
-          uvx pip-audit -r /tmp/req.txt --disable-pip
+          uvx pip-audit -r /tmp/req.txt --no-deps --disable-pip
 
   web:
     name: Web (tipos y lint)
@@ -211,5 +214,6 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm install --no-audit --no-fund
+      - run: npx next typegen   # genera los tipos globales (LayoutProps, PageProps) que usa el App Router
       - run: npx tsc --noEmit
       - run: npm run lint
