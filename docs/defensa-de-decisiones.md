@@ -12,7 +12,8 @@ Cuando una planta de manufactura recibe un reporte de no conformidad, encontrar 
 
 - **Funciona de punta a punta:** reporte de entrada, borrador con fuentes, revisión, aprobación y un registro de auditoría que no se puede alterar sin que se note.
 - **Encuentra la causa correcta:** en las pruebas, la causa real estuvo entre las tres primeras propuestas en todas las corridas, y en primer lugar en cerca de 7 de cada 10 (26 de 36).
-- **Cuesta poco:** menos de un centavo de dólar por análisis de la parte D4.
+- **El modelo que correría en la planta rinde igual:** el candidato de pesos abiertos (Qwen 3.6 27B) acertó 28 de 36 en las mismas pruebas. Es un empate dentro del ruido, no una mejora, pero responde la pregunta de si la confidencialidad cuesta calidad: con estos datos, no.
+- **El costo está en el servidor, no en la IA:** por API, un análisis cuesta menos de un centavo de dólar con DeepSeek y unos 5 centavos con el modelo candidato. Lo confidencial necesita un servidor propio de ~US$10k (≈ US$278 al mes a tres años).
 - **Está probado y automatizado:** más de 750 pruebas automáticas, y una verificación continua en GitHub que revisa seguridad, calidad y secretos filtrados en cada cambio.
 
 ## Las decisiones que lo definen
@@ -23,7 +24,7 @@ Cuando una planta de manufactura recibe un reporte de no conformidad, encontrar 
 
 **2. Lo confidencial no sale de la planta, y eso se impone en tres capas.**
 Un "router" decide a dónde va cada consulta según su nivel de confidencialidad; los datos se anonimizan antes de enviarse; y la base de datos rechaza la combinación prohibida aunque el código fallara.
-*Qué se sacrificó:* simplicidad y costo. Hace falta correr un modelo propio, que es más caro que pagar una API.
+*Qué se sacrificó:* simplicidad y costo. Hace falta correr un modelo propio, que es más caro que pagar una API: con el volumen del caso, el servidor sale en unos US$21 por análisis, contra menos de 5 centavos por API.
 *Por qué vale la pena:* es la razón de existir del proyecto. Sin esto no se podría usar con datos reales de clientes.
 
 **3. Respuestas verificables, no texto libre.**
@@ -49,21 +50,26 @@ Corre en una sola máquina con datos ficticios. Los secretos, el despliegue y la
 
 - **No se ha probado con datos reales.** Los datos son ficticios y los generé yo, con el mismo catálogo que usa el asistente. Eso favorece los resultados.
 - **Las pruebas son pocas.** Con 12 casos de ajuste y otros 8 reservados, los 7 de cada 10 son un indicio, no una precisión garantizada. Una regla simple (copiar la causa del caso más parecido) acierta 7 de 12. El asistente le gana, por poco y con pocos datos.
-- **El modelo "propio" es una simulación.** En las pruebas se usó un servicio externo haciéndose pasar por el modelo local. Se demuestra que el mecanismo de protección funciona; la garantía de que nada sale de la planta requiere instalar el modelo en la planta.
+- **El modelo "propio" todavía no corre en la planta.** Su calidad ya se midió, pero a través de un servicio externo y sin la compresión que necesitaría en una sola GPU. Se demuestra que el mecanismo de protección funciona y que el modelo candidato rinde; la garantía de que nada sale de la planta, y su velocidad real, requieren instalarlo en el servidor de la planta.
+- **No sabe decir "no hay evidencia suficiente".** En el único caso de prueba donde lo correcto era abstenerse, siempre propuso causas. El revisor humano lo cubre, pero es un límite de comportamiento que hay que corregir.
+- **El ahorro no está medido.** Las horas de ingeniería, los días de contención, el scrap y los reclamos que se evitarían dependen de datos reales de la planta. El piloto existe para medirlos.
 - **La defensa contra instrucciones maliciosas escondidas en los textos es parcial.** Detecta una parte de los intentos. El diseño asume que a veces falla, y por eso el asistente solo puede leer, no puede ejecutar acciones, y un humano revisa todo.
 - **Una prueba de carga encontró un fallo real,** que se corrigió, pero no se repitió la prueba completa después de la corrección.
 
 ## Qué sigue
 
 1. **Probar con los casos reservados,** una sola vez y con la configuración final, para saber si los resultados se sostienen.
-2. **Probarlo con casos reales y un ingeniero de calidad** que juzgue las propuestas.
+2. **Probarlo con casos reales y un ingeniero de calidad** que juzgue las propuestas, y medir cuántos días antes habría llegado a la causa y cuánto cuesta cada día de contención.
 3. **Instalar el modelo en la planta,** para cumplir de verdad la promesa de confidencialidad.
 4. **Medir cómo se comporta ante textos maliciosos** con el modelo real, no solo con uno simulado.
 
 ## Preguntas que podrían hacerme
 
 **¿Por qué creerle a un 72 %?**
-No como una cifra de precisión. Muestra que el asistente funciona y supera una regla simple, y que casi siempre pone la causa correcta entre las primeras tres. Para afirmar más hacen falta más casos y datos reales.
+No como una cifra de precisión. Muestra que el asistente funciona y supera una regla simple, y que casi siempre pone la causa correcta entre las primeras tres. El modelo que correría en planta dio 28 de 36 (78 %), que es lo mismo dentro del ruido. Para afirmar más hacen falta más casos y datos reales.
+
+**¿Vale lo que cuesta el servidor?**
+Contando solo horas de ingeniería (un ingeniero de calidad en Juárez cuesta unos US$7 por hora con cargas, estimado), el servidor se paga con unas 38 horas ahorradas al mes: unas 3 horas por 8D con el volumen del caso, o 15 minutos si el volumen fuera diez veces mayor. Ese es el piso. El valor mayor está en contener menos días, generar menos scrap y reducir el riesgo con el cliente, y eso no lo sumo sin medirlo. Además, sin el servidor la opción no es "IA más barata": es no usar IA con datos del cliente.
 
 **¿Qué pasa si la IA se equivoca?**
 Está previsto: propone, no decide. Cada propuesta cita sus fuentes, un ingeniero la revisa y un gerente la aprueba. El peor caso es una causa sugerida que el revisor rechaza.

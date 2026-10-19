@@ -1,5 +1,39 @@
 # Evaluación
 
+## Resultados
+
+Partición dev: 12 casos (E6, E7, E8) × 3 repeticiones = 36 corridas por modelo, variante `con_enlaces` (la de
+producción). Datos sintéticos. Reportes en `traces/evals/` (`dev-v6`, `dev-qwen27`); detalle del candidato local en el
+[ADR 0012](adr/0012-inferencia-local-costo-y-capacidad.md).
+
+| Medida | Línea base trivial | DeepSeek v4.1 Flash (`dev-v6`) | Qwen 3.6 27B (`dev-qwen27`) |
+|---|---|---|---|
+| Papel | Piso a superar | Ruta API | Candidato a modelo local |
+| `pass` (RC primera y ND aceptable) | 21/36 (7 de 12 casos) | **26/36** (0.72); 26–29 entre corridas equivalentes | **28/36** (0.78) |
+| Causa esperada en el top-3 | — | 36/36 | sin dato agregado en el ADR |
+| Gates de tolerancia cero | — | en verde | en verde (0 inseguras, 0 inválidas, 0 fallos de esquema) |
+| Costo por corrida | 0 | ≈ US$0.006 (US$0.22 por 36, reportado por el proveedor) | ≈ US$0.046 |
+| Latencia por corrida (p50 / p95) | — | 85 s / 130 s | 209 s / 378 s |
+| Escalaron a `d4_large` | — | — | 22 de 36 (mismo modelo) |
+
+Línea base por partición (`make eval-baseline`): en dev 7/12 (7/8 recurrentes, 0/4 de causa nueva); en los 20 casos de
+ambas particiones, 11/20 (11/12 recurrentes, 0/8 de causa nueva). Los gates comparan contra la de dev.
+
+**Cómo leerlo.**
+
+- 26 contra 28 son dos corridas: equivalencia dentro del ruido, no una mejora. La unidad real son los casos: 9 de 12
+  pasan 3/3 con ambos modelos.
+- Las fallas se concentran en tres casos. EV-07 es inestable (la causa esperada queda en el lugar 3, 1 y 2). EV-10 pone
+  RC-02 sobre la RC-03 esperada. EV-08 está etiquetado `evidencia_suficiente: false` y el agente **nunca se abstiene**
+  (0/3 con Qwen, 0/9 con DeepSeek en `dev-fix`): propone causas donde debería decir que no hay evidencia suficiente. Es un
+  solo caso, así que no mide una tasa, pero sí es un límite de comportamiento.
+- La comparación entre modelos no es de igual configuración: DeepSeek corrió con `reasoning.effort=low` y Qwen no. Qwen
+  se midió en FP8 por OpenRouter; en planta correría en 4 bits, así que su resultado es algo optimista.
+- Con Qwen, la latencia p95 (378 s) no cumple el objetivo de la ruta API (≤ 180 s); el de la ruta local (≤ 20 min) sí,
+  pero sin medir en hardware propio.
+- Dos etiquetas de casos dev se cambiaron después de ver resultados, y se declaró; se reportan ambos resultados (29 y
+  28 de 36, ver `defensa-de-decisiones.md`). La partición sellada (E9, E10) sigue sin abrir y es la que decide.
+
 ## Recuperación
 
 `make eval-retrieval` mide si las dos búsquedas del agente (`search_cases`: 8D + NCR, top 5; `search_controls`: AMEF,
@@ -71,12 +105,14 @@ Una base sembrada por configuración, y el mismo comando contra cada una (`--nam
 
 ## Variantes
 
-- `base`: el agente como está.
-- `enlace`: `AgentDeps.expand_case_links`. Del top de `search_cases` toma hasta 2 8D (el que salió directo o el que
-  cita una NCR, "8D relacionado") y trae su sección D4 con los mismos permisos, corte y exclusiones
-  (`get_linked_8d_causes`, una llamada más del presupuesto). Apagada por defecto: la recuperación mostró que trae la
-  causa del precedente en ~88% de los casos recurrentes, pero también un 8D de otra causa en todos los casos de causa
-  nueva de dev. Si eso ayuda o confunde al modelo es lo que decide esta comparación.
+- `sin_enlaces`: el agente sin `expand_case_links`.
+- `con_enlaces`: con `AgentDeps.expand_case_links`. Del top de `search_cases` toma hasta 2 8D (el que salió directo o
+  el que cita una NCR, "8D relacionado") y trae su sección D4 con los mismos permisos, corte y exclusiones
+  (`get_linked_8d_causes`, una llamada más del presupuesto). **Es la variante de producción** (ADR 0004): la
+  recuperación mostró que trae la causa del precedente en ~88 % de los casos recurrentes, a cambio de traer también un
+  8D de otra causa en los casos de causa nueva. Las cifras de Resultados son de esta variante.
+
+`make eval-agent` corre ambas si no se le pasa `--variants`; para una serie de producción, `--variants con_enlaces`.
 
 ## Métricas
 
@@ -84,14 +120,14 @@ Sin juez LLM: todo sale de códigos y citas.
 
 - `pass` = la RC esperada es la primera y la ND está entre las aceptables. `pass@1` es la tasa media; `pass^k` exige
   pasar en las k repeticiones (consistencia: un borrador que acierta 2 de 3 veces no es confiable).
-- `RC top1` / `top3`, `ND ok`, y `top1` separado para casos recurrentes y de causa nueva (el baseline TF-IDF acertaba
-  11/12 recurrentes y 0/8 de causa nueva: el agente tiene que ganarle en los segundos).
+- `RC top1` / `top3`, `ND ok`, y `top1` separado para casos recurrentes y de causa nueva (la línea base trivial acierta
+  7/8 recurrentes y 0/4 de causa nueva en dev; 11/12 y 0/8 en los 20 casos: el agente tiene que ganarle en los segundos).
 - `top1 cita precedente`: la causa principal cita el 8D anterior (solo recurrentes). `top1 cita 8D ajeno`: la causa
-  principal se apoya en un 8D de otra causa: el riesgo de `enlace`.
+  principal se apoya en un 8D de otra causa: el riesgo de `con_enlaces`.
 - `RC esperada descartada`: el guardrail tiró la causa correcta. `escaló a grande`: D4 necesitó el modelo grande.
 - Costo estimado (tabla de precios) y reportado por el proveedor (`usage.cost` de OpenRouter, en `audit_log.tags`),
   tokens de razonamiento, latencia p50/p95 de pared.
-- `enlace` frente a `base` caso a caso: qué casos mejoran o empeoran. Con 12 casos, eso dice más que la diferencia de
+- `con_enlaces` frente a `sin_enlaces` caso a caso: qué casos mejoran o empeoran. Con 12 casos, eso dice más que la diferencia de
   promedios.
 
 El reporte avisa si más de un proveedor respondió para el mismo modelo: entonces la varianza entre repeticiones mezcla
@@ -119,11 +155,11 @@ código 1 si falla un gate bloqueante. No llama al modelo. Un gate sin dato no a
 |---|---|---|---|
 | salida-segura | 0 borradores persistidos con culpa a personas o cierre | sí | definitivo |
 | medicion-valida | 0 corridas inválidas | sí | definitivo |
-| pass-linea-base | pass@1 ≥ 0.55 (línea base trivial) | sí | provisional |
-| causa-nueva | RC top-1 en causa nueva ≥ 0.25 (trivial: 0/8) | sí | provisional |
+| pass-linea-base | pass@1 ≥ 0.59 (línea base trivial en dev: 7/12 = 0.583) | sí | provisional |
+| causa-nueva | RC top-1 en causa nueva ≥ 0.25 (trivial en dev: 0/4) | sí | provisional |
 | sin-8d-ajeno | top-1 cita 8D ajeno en causa nueva ≤ 0.25 | sí | provisional |
 | recuperacion-precedente | precedente@5 híbrida ≥ 0.50 | sí | provisional (regresión) |
-| recuperacion-controles | hit@10 controles híbrida ≥ 0.90 | sí | provisional (regresión) |
+| recuperacion-controles | hit@10 controles híbrida ≥ 0.80 | sí | provisional (regresión) |
 | consistencia | pass^k ≥ 0.50 | no | provisional |
 | abstencion-indebida | ≤ 0.20 | no | provisional |
 | costo | costo estimado medio por D4 ≤ $0.10 | no | provisional |
@@ -137,7 +173,7 @@ de prueba, los gates bloqueantes tienen que pasar en dev.
 # Eval semántico (DeepEval + Ragas)
 
 `make eval-semantic` (`app/evalkit/semantic.py`) juzga con un LLM lo que un código no puede ver: si lo citado
-**sostiene** lo afirmado. Corre sobre las corridas ya guardadas por `make eval-agent` (variante `base`, repetición 1,
+**sostiene** lo afirmado. Corre sobre las corridas ya guardadas por `make eval-agent` (variante `con_enlaces` por defecto, `--variant` para otra; repetición 1,
 hasta 12 corridas por defecto). **Gasta tokens**: ~20 llamadas al modelo grande por corrida; `--max-calls` (400) corta.
 
 | métrica | framework | qué responde |
@@ -155,7 +191,7 @@ Decisiones:
   frameworks apagada (`DEEPEVAL_TELEMETRY_OPT_OUT`, `RAGAS_DO_NOT_TRACK`) y sin clave de Confident AI.
 - **No reemplaza al scorer determinista.** RC/ND, citas existentes y precedentes siguen saliendo de códigos.
   Los resultados del juez van en `agente.semantico.json`, aparte.
-- **Sin calibrar no decide.** `make eval-labels N=40` escribe una muestra de hechos en
+- **Sin calibrar no decide.** `make eval-semantic ARGS="--export-labels 40"` escribe una muestra de hechos en
   `data/etiquetas/agente.por_etiquetar.jsonl` **sin** el juicio del juez. Un ingeniero llena `etiqueta_humana` y
   `revisor` y lo guarda como `agente.etiquetas.jsonl`. El siguiente `eval-semantic` mide acuerdo, kappa de Cohen,
   matriz de confusión y la tasa de "respaldada" que el humano no aprueba (el error caro). Calibrado = ≥30 hechos y

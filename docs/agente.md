@@ -102,11 +102,12 @@ Con OpenRouter para ambos destinos, el "local" se marca `LLM_LOCAL__SIMULATED=tr
 Es válido solo con datos ficticios. Para que la prueba diga algo del despliegue real, el modelo "local" debe ser
 del tipo que correrá en planta (pesos abiertos), no un modelo de frontera.
 
-## Expansión por enlace (experimental, apagada)
+## Expansión por enlace (encendida en producción)
 
 `AgentDeps.expand_case_links`: del top de `search_cases` sigue el enlace al 8D (el recuperado o el que cita una NCR) y
-agrega su sección D4. Existe porque la consulta describe el síntoma y nunca recupera la sección con la causa. Se
-decide con `make eval-agent` (variantes `base` y `enlace`); ver `evaluacion.md`.
+agrega su sección D4. Existe porque la consulta describe el síntoma y nunca recupera la sección con la causa. Está
+encendida en producción (variante `con_enlaces`, [ADR 0004](adr/0004-expansion-por-enlace-en-produccion.md)); la
+comparación contra `sin_enlaces` se corre con `make eval-agent` y está en `evaluacion.md`.
 
 ## Rechazo con motivo
 

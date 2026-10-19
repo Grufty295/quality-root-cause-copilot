@@ -11,9 +11,18 @@ puede ir a una API externa, ya redactado.
 
 ## Resultado actual
 
-Partición dev (12 casos, 3 episodios, 36 corridas, `deepseek-v4.1-flash`): **26–29 de 36** aciertos entre corridas equivalentes
-(`dev-v6`: 26/36). La causa esperada está en el top-3 en todas; el fallo sistemático es el orden entre RC-02 y RC-03. La
-partición sellada (E9, E10) no se ha abierto. Detalle y límites en [docs/evaluacion.md](docs/evaluacion.md).
+Partición dev (12 casos, 3 episodios, 36 corridas por modelo, variante `con_enlaces`):
+
+| Modelo | Aciertos (causa principal y no detección) | Para qué sirve el número |
+|---|---|---|
+| Línea base trivial (copiar la causa de la NCR más parecida) | 21/36 (7 de 12 casos) | Piso que el agente tiene que superar |
+| `deepseek/deepseek-v4.1-flash` por API (`dev-v6`) | **26/36**; 26–29 entre corridas equivalentes | Calidad de la ruta API |
+| `qwen/qwen3.6-27b`, candidato a modelo local (`dev-qwen27`) | **28/36** | Calidad del modelo que correría en planta |
+
+En `dev-v6` la causa esperada está en el top-3 en todas las corridas. 26 contra 28 es equivalencia dentro del ruido, no una mejora:
+Qwen se midió en FP8 por OpenRouter (en planta correría en 4 bits) y sin `reasoning.effort=low`. Los fallos se concentran
+en tres casos (EV-07, EV-08, EV-10), y el agente nunca se abstiene cuando debería (EV-08). La partición sellada (E9, E10)
+no se ha abierto. Detalle, límites y fuentes en [docs/evaluacion.md](docs/evaluacion.md#resultados).
 
 ## Arranque
 
@@ -57,6 +66,12 @@ make observability   # añade Langfuse local (UI en :3001)
 `make help` lista todos los objetivos. El eval del agente (`make eval-agent`) gasta tokens: ver [el runbook](docs/operacion/runbook.md).
 
 ## Documentación
+
+Orden de lectura según quién eres:
+
+- **Evaluador o lector no técnico:** [defensa de decisiones](docs/defensa-de-decisiones.md).
+- **Técnico:** [C4](docs/arquitectura/c4.md) → [ADRs](docs/adr/README.md) → [evaluación](docs/evaluacion.md) → [modelo de amenazas](docs/seguridad/modelo-de-amenazas.md).
+- **Quien lo va a correr:** la sección Arranque de arriba → [runbook](docs/operacion/runbook.md).
 
 | Documento | Contenido |
 |---|---|

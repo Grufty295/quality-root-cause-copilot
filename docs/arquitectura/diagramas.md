@@ -65,7 +65,7 @@ flowchart TB
     subgraph prod["Producción objetivo (diseño, ADR 0012; no construido)"]
         direction TB
         app["web + api<br/>réplicas"]:::disen --> pg[("Postgres<br/>administrado")]:::disen
-        app -->|"confidencial"| gpu["servidor GPU en planta<br/>vLLM, Qwen 3.6 27B<br/>RTX 5090 ≈ US$8k"]:::disen
+        app -->|"confidencial"| gpu["servidor GPU en planta<br/>vLLM, Qwen 3.6 27B<br/>RTX 5090 ≈ US$10k"]:::disen
         app -->|"interno o público, opcional"| ap2["proveedor API aprobado"]:::disen
         app -.-> lf2["Langfuse en VPC"]:::disen
     end

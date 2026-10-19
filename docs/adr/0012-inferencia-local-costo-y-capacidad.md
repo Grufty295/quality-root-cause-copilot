@@ -42,7 +42,7 @@ diseño: el acuerdo real con el cliente no se ha consultado y debe confirmarse c
 
 - Consecuencia: lo confidencial corre en hardware propio, con el costo fijo de la tabla de abajo.
 - **Caso relajado, documentado y no construido:** si el acuerdo admite un proveedor aprobado con contrato de datos, rentar
-  una GPU por demanda cuesta entre 10 y 60 veces menos que comprar con este volumen. El cambio no requiere otra
+  una GPU por demanda cuesta entre 15 y 70 veces menos por corrida que comprar (US$0.30 contra US$21 a 13 corridas/mes; US$0.12 contra US$1.9 a 150). El cambio no requiere otra
   arquitectura: el destino "local" es una URL (`LLM_LOCAL__BASE_URL`). Lo que cambia es la garantía, que deja de ser "dentro
   de la planta" y pasa a "con un tercero aprobado", y con ella la redacción del modelo de amenazas (TB3) y el campo
   `simulated`/`provider` de la auditoría.
@@ -53,7 +53,7 @@ diseño: el acuerdo real con el cliente no se ha consultado y debe confirmarse c
 
 | Opción | 13 corridas/mes (dataset) | 150 corridas/mes (×10) |
 |---|---|---|
-| Comprar servidor con una RTX 5090 (~US$8k, 36 meses ≈ US$222/mes) | ~US$17 por corrida | ~US$1.5 |
+| Comprar servidor con una RTX 5090 (~US$10k, 36 meses ≈ US$278/mes) | ~US$21 por corrida | ~US$1.9 |
 | Rentar GPU bajo demanda (~US$0.85/h, 15 min de arranque por sesión) | ~US$0.30 | ~US$0.12 |
 | Rentar GPU 24/7 | ~US$620/mes, peor que comprar | igual |
 | API (DeepSeek, `dev-v6`) | US$0.007 | US$0.007 |
@@ -62,8 +62,29 @@ diseño: el acuerdo real con el cliente no se ha consultado y debe confirmarse c
 La renta bajo demanda solo existe si el contrato con el OEM admite un **proveedor aprobado**. Con el requisito estricto
 (decisión de arriba), la única opción es comprar.
 
-La electricidad no domina: un servidor 24/7 consume del orden de 100 kWh/mes, decenas de dólares con cualquier tarifa
-industrial plausible (verificar con el recibo de CFE de la planta).
+La electricidad no domina: un servidor 24/7 consume del orden de 100 kWh/mes. Con la tarifa GDMTH de Chihuahua
+(1.0–1.9 MXN/kWh según el horario, junio de 2026, publicada por un agregador de datos de CFE) son unos US$5–10 de energía
+al mes, más el cargo por capacidad si el servidor sube la demanda máxima de la planta. Verificar con el recibo de CFE.
+
+### Punto de equilibrio y valor que no se cuenta
+
+Contando solo horas de ingeniería: sueldo promedio de un ingeniero de calidad en Ciudad Juárez 19,795 MXN/mes (Indeed
+México, sept 2026, sueldos autodeclarados; rango 13,399–29,243), con un factor de cargas de 1.4 y 208 h/mes (supuestos)
+y 18.42 MXN/USD (FIX, 9 oct 2026): ≈ US$7.2 por hora (rango 4.7–11.5). El servidor (US$278/mes) se paga con ≈ 38 horas
+ahorradas al mes (rango 24–59): ≈ 3 h por 8D a 13 corridas/mes, ≈ 15 min a 150.
+
+Ese cálculo es el piso. El valor mayor de llegar antes a la causa raíz está en contener menos días (inspección al
+100 %, selección y material en cuarentena), en menos scrap y retrabajo, y en menos riesgo con el cliente (escapes,
+cargos por calidad, scorecard):
+
+    valor mensual = días de contención ahorrados × costo diario de contención
+                  + reincidencias evitadas × costo por incidente
+                  + horas de ingeniería ahorradas × costo por hora
+
+Solo el último término tiene dato. Los otros no se suman sin medirlos: en el piloto en sombra se estiman como la
+diferencia entre el día en que el borrador del agente ya señalaba la causa correcta y el día en que el equipo la aprobó,
+multiplicada por el costo diario de contención que reporte la planta. La contención (D3) ocurre de todos modos en las
+primeras 24 h; lo que el agente puede acortar es cuánto tiempo sigue activa.
 
 ## Capacidad (sensibilidad, sin medir en hardware propio)
 
@@ -84,6 +105,12 @@ Tiempo por llamada de ~7,000 tokens de salida según el throughput que logre la 
 Con 20 tok/s o más, una corrida sola (incluso con escalamiento) cabe en el SLO de 20 min. La ráfaga de 5 solo con
 batching o con 30 tok/s por flujo. Referencia, no dato: OpenRouter reporta 38–44 tok/s para este modelo.
 
+Mediciones publicadas en una RTX 5090 (sept–oct 2026; no son de nuestra carga): Tom's Hardware midió Qwen 3.8 27B con
+vLLM a 20 tok/s sin MTP y 100–110 tok/s con MTP; benchmarks comunitarios reportan 58–80 tok/s para modelos densos de
+este tamaño (SpecPicks: 80 tok/s con Qwen 3.6 27B y vLLM 0.19) y ~205 tok/s agregados con 8 flujos simultáneos. Con 20–110
+tok/s, una llamada de ~7,000 tokens tarda 1–6 min y una corrida con escalamiento hasta 12 min: cabe en el SLO de 20 min
+incluso en el peor caso publicado. La ráfaga de 5 sigue necesitando batching.
+
 Margen de `max_tokens`: las llamadas usaron 6,552–7,082 de 8,192 tokens de salida (hasta 86 %). Una corrida que
 razone más se trunca; en dev hay que revisar `finish_reason=length`.
 
@@ -99,7 +126,12 @@ en FP8 no mide. Verificar si la arquitectura usa atención híbrida, que reduce 
 - (−) Sin GPU propia, el throughput es sensibilidad, no medición. Medirlo cuesta ~€1–2 rentando una 5090 una hora.
 
 ## Supuestos
-- Precio de la 5090: reventa en octubre de 2026 (US$4.8–6.3k; lista US$1,999). Con un integrador, el capex cambia.
+- Precio del servidor: ~US$10k. Equipos completos con RTX 5090 y 128 GB se publicaban en octubre de 2026 entre
+  US$9,220 (Best Buy) y US$11,650 (Amazon); integradores desde US$10,000 y hasta ~US$15,000 con más garantía. La tarjeta
+  sola: 84,249–149,919 MXN en Cyberpuerta (18 oct 2026), reventa US$4.8–6.3k, lista US$1,999. (Versiones anteriores de
+  este ADR usaban ~US$8k.)
+- Costo por hora del ingeniero: sueldo de Indeed (autodeclarado); el factor de cargas de 1.4 y las 208 h/mes son
+  supuestos, no datos de nómina.
 - No incluye el tiempo de TI para operar el servidor; probablemente el costo mayor de comprar, sin base para estimarlo.
 - Los tokens y el costo de Qwen salen de `dev-qwen27` (36 corridas, 63 llamadas). El humo (3 corridas) subestimó el costo.
 

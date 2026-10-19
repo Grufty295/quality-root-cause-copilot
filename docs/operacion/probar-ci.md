@@ -121,7 +121,7 @@ Esta tabla reemplaza a las hipótesis de arriba para esta corrida. Salvo la nota
 | web | `tsc`: no encuentra `LayoutProps` | Next 16 genera esos tipos globales | `npx next typegen` antes de `tsc` |
 | web | 9 errores `no-explicit-any` | `drafts.tsx` tipado con `any` | Tipos explícitos (`CampoD2`, `D2Content`, `Causa`, `D4Content`) |
 | evals-live | Seed: no existe `/workspace/data/seed/...` | Rutas del contenedor Docker | `--data` y `--evals` con `${{ github.workspace }}` |
-| evals-live | `variantes desconocidas: ['base']` | La variante `base` no existe; también estaba en `make eval-smoke` | `con_enlaces` (la de producción) |
+| evals-live | `variantes desconocidas: ['base']` | La variante `base` no existe (las válidas son `sin_enlaces` y `con_enlaces`); también estaba en un `eval-smoke` que ya no está en el Makefile | `con_enlaces` (la de producción) |
 
 Dos precisiones honestas: (1) una de las fallas «de CI» fue que el `ci.yml` nuevo no se había copiado al repo y los logs mostraban
 el comportamiento viejo; se verifica que el run use el commit esperado antes de interpretar un rojo. (2) Ninguna de las fallas

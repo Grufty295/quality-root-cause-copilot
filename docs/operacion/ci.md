@@ -31,7 +31,7 @@ Además:
   Antes de funcionar falló dos veces, por razones que solo una corrida real podía mostrar: (1) el seed y el eval usaban rutas del
   contenedor (`/workspace/data/seed`, `/workspace/evals`) que no existen en el runner; se pasan `--data` y `--evals` con
   `${{ github.workspace }}`; (2) `--variants base` no existe (las válidas son `sin_enlaces` y `con_enlaces`); el mismo error estaba en
-  `make eval-smoke`.
+  un objetivo `eval-smoke` que ya no está en el Makefile (el humo se corre con `make eval-agent ARGS="--casos EV-01,EV-05,EV-09 --repeats 1"`).
 - **El CI avisa pero no impide fusionar.** Sin protección de rama, un PR en rojo sigue teniendo el botón de fusión activo; se comprobó el 19 oct 2026 con la prueba A de `probar-ci.md`. Esa misma prueba demostró que una regresión del detector de inyección pone en rojo las capas 1, 1b y 3, y deja en verde la 2 (que evalúa un reporte, no el código).
 - **No hay canary ni rollback automático.** No hay despliegue que revertir: el sistema corre en Docker Compose. El criterio
   de promoción y de retroceso está en el runbook (sección 9), no en un workflow.

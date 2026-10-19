@@ -30,9 +30,9 @@
 ## Evaluación y referencia técnica
 | Documento | Para qué |
 |---|---|
-| [evaluacion.md](evaluacion.md) | Métricas, partición, gates y reglas del eval |
+| [evaluacion.md](evaluacion.md) | Resultados por modelo, métricas, partición, gates y reglas del eval |
 | [agente.md](agente.md) | El grafo D2/D4, sus etapas y sus guardrails |
 | [datos-operativos.md](datos-operativos.md) | Datos de defectos, mantenimiento, equipos y ciclos que carga la semilla |
 
-Las cifras de calidad, costo y latencia provienen de `dev-v6` (36 corridas, datos sintéticos). Los huecos conocidos están
+Las cifras de calidad, costo y latencia provienen de `dev-v6` (DeepSeek por API) y `dev-qwen27` (candidato a modelo local), 36 corridas cada uno con datos sintéticos; la tabla está en [evaluacion.md](evaluacion.md#resultados). Los huecos conocidos están
 en cada documento, en la sección de brechas o consecuencias.
