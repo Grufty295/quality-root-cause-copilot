@@ -11,3 +11,5 @@ node_modules/
 .DS_Store
 _respaldo-*.zip
 *.bak
+backups/
+audit/
