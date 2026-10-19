@@ -17,13 +17,30 @@ partición sellada (E9, E10) no se ha abierto. Detalle y límites en [docs/evalu
 
 ## Arranque
 
-Requisitos: Docker con Compose, `make`.
+Requisitos: Docker (Desktop o Engine) con Compose v2 y `make`. Los puertos 3000, 8000 y 5432 deben estar libres; corre un solo stack a la vez.
+
+| Sistema | Qué necesitas |
+|---|---|
+| Linux | `make` (`sudo apt install make`) |
+| macOS | `make`, que viene con las herramientas de línea de comandos de Apple (`xcode-select --install`) |
+| Windows | **Git Bash o WSL**: `make` no existe en PowerShell. Clona con `git clone -c core.autocrlf=false <url>` para que los datos conserven sus saltos de línea (el seed compara hashes del contenido) |
+
+Probado en Windows con Git Bash. El Makefile usa solo funciones de GNU Make 3.81 (la versión que trae macOS) y `sed -i.bak`, válido en BSD y GNU, pero no se ha ejecutado en Linux ni en macOS.
 
 ```bash
 make init            # crea .env desde .env.example; revisa POSTGRES_PASSWORD y las llaves LLM_*
 make up-d            # db, api y web en segundo plano
 make seed            # catálogos, usuarios de demo y corpus
 ```
+
+Sin `make` (PowerShell), el equivalente es:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.langfuse.yml up --build -d
+docker compose -f docker-compose.yml -f docker-compose.langfuse.yml exec api python -m app.seed
+```
+
+(Antes, copia `.env.example` a `.env` y crea la carpeta `traces/`, que es lo que hace `make init`.)
 
 Web en <http://localhost:3000> (login de demo, sin contraseña); API en <http://localhost:8000/health>.
 Los modelos van fijos en `.env` (`LLM_LOCAL__*`, `LLM_API__*`); sin llave no hay análisis.
@@ -43,7 +60,8 @@ make observability   # añade Langfuse local (UI en :3001)
 | Documento | Contenido |
 |---|---|
 | [docs/arquitectura/c4.md](docs/arquitectura/c4.md) | Contexto, contenedores, componentes y flujo de datos |
-| [docs/adr/](docs/adr/README.md) | 11 decisiones de arquitectura con alternativas y consecuencias |
+| [docs/defensa-de-decisiones.md](docs/defensa-de-decisiones.md) | **Empieza aquí.** Problema, decisiones, qué se sacrificó y qué falta demostrar, sin jerga |
+| [docs/adr/](docs/adr/README.md) | 12 decisiones de arquitectura con alternativas y consecuencias |
 | [docs/seguridad/modelo-de-amenazas.md](docs/seguridad/modelo-de-amenazas.md) | Amenazas, controles, OWASP LLM Top 10 y brechas abiertas |
 | [docs/operacion/runbook.md](docs/operacion/runbook.md) | Operación, incidentes, rotación de llaves y evals |
 | [docs/evaluacion.md](docs/evaluacion.md) | Métricas, partición sellada y gates |

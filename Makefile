@@ -1,5 +1,7 @@
 COMPOSE ?= docker compose -f docker-compose.yml -f docker-compose.langfuse.yml
-PROJECT := arnes-8d
+# Mismo nombre que usa Compose (COMPOSE_PROJECT_NAME si está definido; si no, arnes-8d).
+# Así los volúmenes que borra reset-* son los del stack activo, no los de otro clon.
+PROJECT := $(or $(COMPOSE_PROJECT_NAME),arnes-8d)
 SEED    ?= 42
 
 LANGFUSE_VOLUMES := langfuse_postgres_data langfuse_clickhouse_data langfuse_clickhouse_logs langfuse_minio_data langfuse_redis_data
@@ -47,17 +49,17 @@ observability: init-langfuse ## Todo mas Langfuse en segundo plano (UI en http:/
 	@echo "Langfuse: http://localhost:3001  (usuario admin@example.com; clave: LANGFUSE_INIT_USER_PASSWORD en .env.langfuse)"
 	@echo "Para exportar trazas: TRACE_EXPORTER=langfuse en .env y luego: $(COMPOSE) up -d api  (restart no relee .env)"
 
-down: ## Detiene todos los servicios, incluidos los de perfiles (conserva los datos)
-	$(COMPOSE) --profile '*' down
+down: ## Detiene todos los servicios (conserva los datos). Sin .env.langfuse, solo los base
+	@if [ -f .env.langfuse ]; then $(COMPOSE) --profile '*' down; else $(COMPOSE) down; fi
 
 reset-db: ## Borra SOLO la base de datos (pgdata); no toca modelos descargados
 	@read -p "Esto borra los datos de Postgres. Continuar? [y/N] " a; [ "$$a" = "y" ] || exit 1
-	$(COMPOSE) --profile '*' down
+	@if [ -f .env.langfuse ]; then $(COMPOSE) --profile '*' down; else $(COMPOSE) down; fi
 	docker volume rm $(PROJECT)_pgdata
 
 reset-observability: ## Borra los datos de Langfuse (trazas, usuarios, proyecto)
 	@read -p "Esto borra todos los datos de Langfuse. Continuar? [y/N] " a; [ "$$a" = "y" ] || exit 1
-	$(COMPOSE) --profile observability rm -sf $(LANGFUSE_SERVICES)
+	@if [ -f .env.langfuse ]; then $(COMPOSE) --profile observability rm -sf $(LANGFUSE_SERVICES); else echo 'No hay .env.langfuse: no hay datos de Langfuse que borrar'; fi
 	docker volume rm $(foreach v,$(LANGFUSE_VOLUMES),$(PROJECT)_$(v))
 
 logs: ## Sigue los logs de la API
