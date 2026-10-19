@@ -164,6 +164,24 @@ el commit nuevo aunque el valor sea falso.
 Importante con C: el secreto de prueba **queda en el historial de esa rama**. No lo empujes a `main`. Usa un valor falso con la
 forma de una llave, nunca una real. Si sospechas que algo real se filtró, rota la llave en el proveedor.
 
+### Resultados de la Fase 4
+
+| # | Prueba | Resultado (19 oct 2026) | Evidencia |
+|---|---|---|---|
+| A | `detect_injection` desactivado (`views` vacío) | **Rojo como se esperaba**: fallaron `1 · prompt` (29 s), `1b · Promptfoo` (56 s) y `3 · integración` (1 min). Pasaron `2 · modelo`, `Dependencias` y `Secretos`. | `ci-prueba-a-rojo.png` |
+| B | Reporte congelado con `unsafe_output_runs` = 1 | No ejecutada | — |
+| C | Secreto falso en un archivo | No ejecutada | — |
+| D, E, F | Umbral de regresión, reporte ausente, migración rota | No ejecutadas | — |
+
+![Prueba A: PR en rojo](ci-prueba-a-rojo.png)
+
+Lo que enseñó la prueba A, más allá de «bloquea»:
+- **`3 · integración` también cayó**, porque la suite completa ejecuta los casos adversariales. Una regresión del detector se detecta por tres caminos, no por uno.
+- **`2 · modelo` siguió en verde**, como ya declara `ci.md`: evalúa un reporte congelado, no el código. Un guardrail roto no la toca; la protegen las capas 1, 1b y 3.
+- **El PR rojo se podía fusionar**: el botón «Merge pull request» seguía activo. No hay protección de rama (no se configuró), así que el CI **avisa pero no impide**. Hasta que se active, «bloquea» describe el diseño del CI y no un control forzado.
+
+Las pruebas B a F no se ejecutaron por tiempo; el estado de cada una está en la tabla y no se presenta como probado.
+
 Si una de estas pruebas **pasa en verde**, encontraste un hueco del CI: es el hallazgo más valioso de esta fase, anótalo en
 `ci.md` ("Qué NO hace este CI").
 
