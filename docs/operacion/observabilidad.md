@@ -9,6 +9,48 @@ Dos fuentes que se corresponden por `trace_id` (el id de la corrida, 32 hex):
 
 ## Qué muestra una traza real
 
+Dos corridas del 19 oct 2026 en Langfuse (entorno `dev`, release `facb11f`, versión de prompts `d2-v1+d4-v2`, NCR confidencial
+de la línea L1): una que no escaló y otra que escaló al modelo grande. Los tramos son los mismos: `guard_input`, `gather`
+(las tools y las búsquedas, sin LLM), `d2`, `d4_small` y, en la segunda, el evento `escala_al_modelo_grande` con su segunda
+llamada.
+
+![Traza sin escalamiento](langfuse-traza.png)
+
+![Traza con escalamiento](langfuse-traza-escalada.png)
+
+| | Corrida normal | Corrida con escalamiento |
+|---|---|---|
+| Traza | `81e873dd…` | `468f7c0f…` |
+| Duración | 3 min 18 s | 5 min 4 s |
+| `gather` (datos y búsquedas) | 6.2 s | 12.3 s |
+| `d2` | 58.0 s · US$0.0113 | 59.6 s · US$0.0115 |
+| `d4_small` | 2 min 14 s · US$0.0262 | 1 min 57 s · US$0.0260 |
+| Segunda llamada (`d4_large`) | no hubo | ≈ 1 min 55 s · ≈ US$0.026 (por diferencia con el total; no se ve completa en la captura) |
+| Costo total | US$0.0375 | US$0.0639 |
+| Tokens (entrada → salida) | 14,964 → 10,234 | 28,703 → 17,085 |
+| Scores | todos en 0 | `escalo_a_modelo_grande` = 1 y `violaciones_guardrail` = 1; el resto en 0 |
+
+Los cinco scores de la segunda traza se ven en su pestaña *Scores* (origen `API`, tipo numérico), lo que confirma que
+llegan por el camino corregido más abajo:
+
+![Scores de la traza con escalamiento](langfuse-traza-escalada-score.png)
+
+Lo que estas trazas permiten afirmar:
+- **El tiempo está en el modelo.** Entre `d2`, `d4_small` y la segunda llamada se va más del 95 % de la duración; `gather`
+  son 6–12 s (3–4 %). Optimizar la recuperación no cambia el panorama.
+- **Escalar casi duplica el costo y alarga la corrida** (US$0.0375 → US$0.0639, 3 min 18 s → 5 min 4 s). Son dos NCR
+  distintas, así que la comparación es orientativa y no un experimento controlado; `d2` y `d4_small` cuestan lo mismo en
+  ambas, y la diferencia es la segunda llamada.
+- **La traza de 5 min 4 s (306 s) está en el orden del p95 del dashboard (306.4 s).** Es coherente con que el p95 lo
+  marquen las corridas que escalan; es una lectura, no una medición separada.
+- **`Input` y `Output` salen como `undefined` a propósito** (ADR 0008): la traza lleva ids, conteos, tiempos y eventos,
+  nunca texto de la NCR ni de la respuesta. La metadata trae el `ncr_id` (un identificador), las disciplinas y la duración.
+- La generación `llm:D2` muestra su duración real (58.0 s): confirma la corrección 1 de la lista de abajo.
+
+Dos trazas son ejemplos, no estadística. Para la distribución están el dashboard y `audit_log`.
+
+### Una corrida anterior (18 oct)
+
 La traza `a7a1ffe2…` (análisis de D4, 18 oct 2026, Qwen 3.6 27B) tiene 28 observaciones:
 
 | Tramo | Duración | Qué dice |
@@ -23,7 +65,7 @@ La traza `a7a1ffe2…` (análisis de D4, 18 oct 2026, Qwen 3.6 27B) tiene 28 obs
 Lo que esta traza permite afirmar, con evidencia y no de memoria:
 - El tiempo está en el modelo (197 de 198 s); los datos son 0.34 s. Optimizar la recuperación no cambia nada.
 - Esta corrida costó el doble por el escalamiento: una segunda llamada completa al mismo modelo.
-- En el humo anterior `gather` tardó 34 s. Aquí 0.34 s: era un arranque en frío del modelo de embeddings.
+- En el humo anterior `gather` tardó 34 s. Aquí 0.34 s: era un arranque en frío del modelo de embeddings. (En las trazas del 19 oct `gather` tomó 6–12 s con corridas simultáneas; la conclusión no cambia.)
 
 Correcciones al exportador a partir de esa misma traza (hechas, falta reconstruir la imagen para verlas):
 1. Las `generation` salían con **duración 0** porque se creaban al terminar la llamada. Ahora se abren antes y cuelgan de su
@@ -110,6 +152,31 @@ Con destino `local` el costo del proveedor es el del modelo simulado; con hardwa
   | Promedio del score de escalamiento | 0.357 | Umbral propuesto 60 %: dentro (coincide con el 33–40 % medido) |
 
   Captura del dashboard: `docs/operacion/langfuse-dashboard-slo.png`.
+
+  ### Cómo recrear el dashboard (Dashboards → New dashboard → Add widget)
+
+  Langfuse permite exportar e importar dashboards como JSON, pero no se aprovisionan al arrancar la instancia. Este
+  documento es la definición: quien integre el proyecto crea un dashboard vacío y añade estos widgets. Todos usan el rango
+  de fechas del dashboard. Los nombres de campo son los del constructor de widgets de Langfuse.
+
+  | # | Widget | Vista (View) | Métrica y agregación | Filtro | Agrupar por | Gráfico |
+  |---|---|---|---|---|---|---|
+  | 1 | Latencia p50 de trazas | Traces | Latency · p50 | — | — | Número |
+  | 2 | Latencia p95 de trazas | Traces | Latency · p95 | — | — | Número |
+  | 3 | Latencia p95 de `analisis_8d` en el tiempo | Traces | Latency · p95 | Name = `analisis_8d` | — | Línea (tiempo) |
+  | 4 | Costo p95 por traza | Traces | Total Cost · p95 | Name = `analisis_8d` | — | Número |
+  | 5 | Costo total por etiqueta | Traces | Total Cost · Sum | — | Tags | Barras |
+  | 6 | Promedio de scores en el tiempo | Scores (numéricos) | Value · Avg | — | Name (el score) | Línea (tiempo) |
+  | 7 | Suma de scores en el tiempo | Scores (numéricos) | Value · Sum | — | Name (el score) | Línea (tiempo) |
+  | 8 | Tokens por modelo | Observations | Total Tokens · Sum | Type = Generation | Provided Model Name | Barras |
+  | 9 | Escalamiento al modelo grande | Scores (numéricos) | Value · Avg | Name = `escalo_a_modelo_grande` | — | Número |
+
+  Scores que emite el exportador por análisis: `escalo_a_modelo_grande`, `violaciones_guardrail`, `errores_llm`,
+  `fragmentos_en_cuarentena`, `disciplinas_bloqueadas`. La traza se llama `analisis_8d`. Langfuse reporta la latencia en
+  milisegundos (un `104.549K` son 104.5 s).
+
+  **Verificación pendiente:** esta tabla se reconstruyó a partir de la descripción de los widgets, no exportando el
+  dashboard (la exportación a JSON no estuvo disponible). Si alguna fila no coincide con tu dashboard, corrígela aquí.
 
   **Qué no dicen esos números:**
   1. Son pocas trazas de desarrollo, no tráfico: un p95 de pocas decenas de puntos es una estimación débil.

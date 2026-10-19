@@ -3,6 +3,7 @@
 ## Producto y diseño
 | Documento | Para qué |
 |---|---|
+| [defensa-de-decisiones.md](defensa-de-decisiones.md) | **Empieza aquí.** El problema, las decisiones clave y sus costos, y lo que falta demostrar, para público técnico y no técnico |
 | [producto/restricciones-y-alcance.md](producto/restricciones-y-alcance.md) | Restricciones de la planta, alcance y qué no se persigue |
 | [adr/](adr/README.md) | Decisiones de arquitectura con alternativas y consecuencias (0001 a 0012) |
 | [arquitectura/c4.md](arquitectura/c4.md) | Contexto, contenedores, componentes y flujo de datos |

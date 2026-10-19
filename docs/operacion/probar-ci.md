@@ -3,9 +3,9 @@
 Objetivo: tener **evidencia de que el CI funciona y de que bloquea**, no solo de que corre. Un pipeline que nunca ha
 fallado no demuestra nada: la mitad de esta guía es romperlo a propósito.
 
-Qué se sabe y qué no hoy: `ci.yml` y `evals-live.yml` **nunca se han ejecutado en Actions**. Se verificó que la sintaxis YAML
-carga y que los comandos de cada job corren localmente; no se ha visto un run verde ni uno rojo. Lo que sigue es el
-orden para averiguarlo con el menor costo.
+Estado al 19 oct 2026: `ci.yml` ya corrió en Actions (rama `ci/primera-prueba`) y quedó en verde tras varias correcciones
+(sección «Lo que falló en la primera corrida»). `evals-live.yml` también se ejecutó una vez, con dos correcciones previas.
+**Falta la Fase 4**: probar que el CI *bloquea* (romperlo a propósito). Un verde solo demuestra que corre, no que protege.
 
 ## Fase 0. Antes de empujar (local, ~20 min)
 
@@ -108,6 +108,25 @@ Ordenado por probabilidad, según lo que el código dice (no es una medición):
 | `web` falla | `npm run lint` con reglas nuevas, o `tsc` por tipos de React Query | Corregir en local con 0.6 |
 | `dependencias` en rojo/amarillo | Hay una vulnerabilidad conocida | No bloquea (`continue-on-error`); decide si se vuelve bloqueante |
 
+### Lo que falló en la primera corrida (real, 19 oct 2026)
+
+Esta tabla reemplaza a las hipótesis de arriba para esta corrida. Salvo la nota final, cada fila fue un arreglo en su commit.
+
+| Job | Síntoma real | Causa | Arreglo |
+|---|---|---|---|
+| API (todos) | `uv sync` falla con `src/api/__init__.py` | `pyproject.toml` declaraba un paquete (`[project.scripts]`, `[build-system]`) que no existe: la API corre desde el código fuente | `[tool.uv] package = false` y `pythonpath = ["."]` para pytest; `uv.lock` pasa de `editable` a `virtual` |
+| secretos | `gitleaks-action` falla por rango de commits | Con un commit raíz no hay rango anterior que escanear | Binario `gitleaks detect` con `fetch-depth: 0` (historial completo) |
+| secretos | 13 hallazgos de `generic-api-key` | Historial: 7 literales de prueba/ejemplo y 6 valores de `.env.langfuse.example` que parecían reales | Los 6 se rotaron y se reemplazaron por placeholders; los 13 fingerprints en `.gitleaksignore` (ver `ci.md`) |
+| dependencias | `pip-audit` rechaza los flags | `--disable-pip` exige hashes o `--no-deps` | `--no-deps` |
+| web | `tsc`: no encuentra `LayoutProps` | Next 16 genera esos tipos globales | `npx next typegen` antes de `tsc` |
+| web | 9 errores `no-explicit-any` | `drafts.tsx` tipado con `any` | Tipos explícitos (`CampoD2`, `D2Content`, `Causa`, `D4Content`) |
+| evals-live | Seed: no existe `/workspace/data/seed/...` | Rutas del contenedor Docker | `--data` y `--evals` con `${{ github.workspace }}` |
+| evals-live | `variantes desconocidas: ['base']` | La variante `base` no existe; también estaba en `make eval-smoke` | `con_enlaces` (la de producción) |
+
+Dos precisiones honestas: (1) una de las fallas «de CI» fue que el `ci.yml` nuevo no se había copiado al repo y los logs mostraban
+el comportamiento viejo; se verifica que el run use el commit esperado antes de interpretar un rojo. (2) Ninguna de las fallas
+de esta tabla era un fallo del *producto*: eran de configuración. La Fase 4 es la que mide si el CI atrapa fallos del producto.
+
 Regla para arreglar: **un arreglo por commit y un push por arreglo**. Cada run tarda minutos; adivinar varios a la vez
 hace que no sepas cuál funcionó. Y no desactives un job para ponerlo en verde: si un job no es válido, se documenta en
 `ci.md` como límite, no se silencia.
@@ -121,7 +140,7 @@ pantalla de la página del run**, cierra el PR sin fusionar y borra la rama.
 |---|---|---|---|
 | A | Un guardrail | Quita el patrón `ignorar_instrucciones` de `app/agent/guardrails/injection.py` | Capa 1 **y** Promptfoo (core) |
 | B | La calidad congelada | En `evals/reportes/agente.json`, dentro de `aggregates` (variante `con_enlaces`, split `dev`), pon `unsafe_output_runs` en 1 o baja `pass@1` a 0.4 | Capa 2 (`salida-segura` y `pass-linea-base` son bloqueantes) |
-| C | Un secreto | Añade `OPENROUTER_API_KEY=sk-or-v1-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef` a un archivo | `secretos` |
+| C | Un secreto | Escribe en un archivo una línea `OPENROUTER_API_KEY=` seguida de `sk-or-v1-` y 64 caracteres hex (comando abajo) | `secretos` |
 | D | El umbral de regresión | Quita el patrón `descartar_reglas` de `injection.py` | Promptfoo (variantes, umbral 100) |
 | E | La existencia del reporte | `git rm evals/reportes/agente.json` | Capa 2 con el mensaje "Sin dato no se aprueba" |
 | F | Una migración rota | Añade un `.sql` con un error de sintaxis al final | Capas 1 y 3 |
@@ -129,13 +148,18 @@ pantalla de la página del run**, cierra el PR sin fusionar y borra la rama.
 ```bash
 # patrón para cada prueba (ejemplo C)
 git switch ci/primera-corrida && git switch -c ci/rompe-secreto
-echo 'OPENROUTER_API_KEY=sk-or-v1-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' > prueba-secreto.txt
+echo "OPENROUTER_API_KEY=sk-or-v1-$(printf '0123456789abcdef%.0s' 1 2 3 4)" > prueba-secreto.txt   # se construye en vivo: el doc no lleva la cadena
 git add prueba-secreto.txt && git commit -m "prueba: secreto falso (debe fallar)" && git push -u origin ci/rompe-secreto
 gh pr create --title "PRUEBA: debe fallar" --body "No fusionar" --base ci/primera-corrida
 gh run watch
 # al terminar
 gh pr close --delete-branch
 ```
+
+En PowerShell (prueba C): `"OPENROUTER_API_KEY=sk-or-v1-" + ("0123456789abcdef" * 4) | Set-Content prueba-secreto.txt -Encoding ascii`.
+Nota: la cadena **no se escribe literal en este documento** a propósito; hacerlo disparó `gitleaks` sobre este mismo archivo (13
+hallazgos de historial, ver `ci.md`). Sobre `gitleaks` y la rama de prueba: el job escanea todo el historial, así que falla por
+el commit nuevo aunque el valor sea falso.
 
 Importante con C: el secreto de prueba **queda en el historial de esa rama**. No lo empujes a `main`. Usa un valor falso con la
 forma de una llave, nunca una real. Si sospechas que algo real se filtró, rota la llave en el proveedor.
@@ -178,14 +202,16 @@ gh secret set OPENROUTER_API_KEY                       # pega la llave cuando la
 gh variable set LLM_MODEL     --body "qwen/qwen3.6-27b"
 gh variable set LLM_PRICE_IN  --body "0.32"
 gh variable set LLM_PRICE_OUT --body "3.20"
-gh workflow run evals-live.yml -f casos="EV-01"        # un caso primero: ~US$0.05 y confirma que arranca
+gh workflow run evals-live.yml -f casos="EV-01"        # un caso primero (barato) y confirma que arranca
 gh run watch
 gh run download --name reporte-eval -D traces/ci-humo
 ```
 
-Qué esperar (hipótesis, no medido): la descarga de e5-large en un runner limpio toma varios minutos; el `seed` indexa el
-corpus completo; el tope del job es 60 min. Si el primer caso pasa, corre los 3 por defecto. Compara el `pass` y el costo
-con `humo-qwen27` (3/3, US$0.0357 por corrida).
+Resultado de la primera corrida completa (19 oct 2026, 3 casos EV-01, EV-05, EV-09; `con_enlaces`; 1 repetición): 3 válidas,
+0 inválidas, 0 salidas inseguras, RC top1 1.00, pass@1 0.67 (falló EV-01 en el criterio de no-dato, no en la causa), US$0.054
+estimado / US$0.050 reportado, p50 238 s con concurrencia 3 (incluye cola del proveedor). Es una prueba de funcionamiento
+del camino, no de calidad: n = 3. Referencia anterior: `humo-qwen27` (3/3, US$0.0357 por corrida) fue otra muestra y otra
+configuración; no se comparan como tendencia. No se congela este reporte en `evals/reportes/`.
 
 ## Fase 7. Qué guardar como evidencia para la defensa
 
