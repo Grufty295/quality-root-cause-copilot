@@ -5,6 +5,21 @@ import { Button, ErrorBox } from "./ui";
 import { errorText, type Section } from "../lib/api";
 import { useEditSection } from "../lib/queries";
 
+/** Cada campo 5W2H llega como texto o como `{ texto }`. */
+type CampoD2 = string | { texto?: string; [k: string]: unknown } | null | undefined;
+type D2Content = Record<string, CampoD2>;
+
+/** Tarjeta de causa de D4. El editor anterior escribía `descripcion`/`hipotesis`; hoy el API usa `explicacion`. */
+type Causa = {
+  codigo?: string;
+  descripcion?: string;
+  hipotesis?: string;
+  explicacion?: string;
+  evidencia?: unknown;
+  [k: string]: unknown;
+};
+type D4Content = { causas_ocurrencia?: Causa[]; causa_no_deteccion?: Causa | null; [k: string]: unknown };
+
 export function D2View({
   section,
   ncrId,
@@ -12,9 +27,9 @@ export function D2View({
   section: Section;
   ncrId: string;
 }) {
-  const content = (section.content || {}) as any;
+  const content = (section.content || {}) as D2Content;
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<any>(content);
+  const [form, setForm] = useState<D2Content>(content);
   const edit = useEditSection(ncrId);
   const saving = edit.isPending;
   const error = errorText(edit.error);
@@ -81,8 +96,8 @@ export function D2View({
 }
 
 /** El editor anterior escribía `descripcion` e `hipotesis` junto a `explicacion`; el API ya no las acepta. */
-function withoutLegacyKeys(content: any) {
-  const clean = (causa: any) =>
+function withoutLegacyKeys(content: D4Content) {
+  const clean = (causa: Causa) =>
     Object.fromEntries(Object.entries(causa).filter(([key]) => key !== "descripcion" && key !== "hipotesis"));
   return {
     ...content,
@@ -98,9 +113,9 @@ export function D4View({
   section: Section;
   ncrId: string;
 }) {
-  const content = (section.content || {}) as any;
+  const content = (section.content || {}) as D4Content;
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<any>(JSON.parse(JSON.stringify(content || { causas_ocurrencia: [], causa_no_deteccion: null })));
+  const [form, setForm] = useState<D4Content>(JSON.parse(JSON.stringify(content || { causas_ocurrencia: [], causa_no_deteccion: null })));
   const edit = useEditSection(ncrId);
   const saving = edit.isPending;
   const error = errorText(edit.error);
@@ -111,12 +126,12 @@ export function D4View({
       { onSuccess: () => setEditing(false) },
     );
 
-  const renderEvidencia = (evidencia: any) => {
+  const renderEvidencia = (evidencia: unknown) => {
     if (!evidencia) return "Ninguna";
     if (Array.isArray(evidencia)) {
       return evidencia.map((e) => (typeof e === "string" ? e : e.texto || e.id || JSON.stringify(e))).join(", ");
     }
-    if (typeof evidencia === "object") return evidencia.texto || JSON.stringify(evidencia);
+    if (typeof evidencia === "object") return (evidencia as { texto?: string }).texto || JSON.stringify(evidencia);
     return String(evidencia);
   };
 
@@ -136,7 +151,7 @@ export function D4View({
           <div>
             <h4 className="text-xs font-mono uppercase text-muted mb-2">Causas de Ocurrencia (RC)</h4>
             <div className="grid gap-3">
-              {(content.causas_ocurrencia || []).map((c: any, idx: number) => (
+              {(content.causas_ocurrencia || []).map((c: Causa, idx: number) => (
                 <div key={idx} className="p-3 bg-secondary/50 rounded border border-border">
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-mono text-xs font-bold px-2 py-0.5 bg-primary/20 text-primary rounded">{c.codigo}</span>
@@ -167,7 +182,7 @@ export function D4View({
         <div className="grid gap-4">
           <div>
             <h4 className="text-xs font-mono uppercase text-muted mb-2">Causas de Ocurrencia (RC)</h4>
-            {(form.causas_ocurrencia || []).map((c: any, idx: number) => (
+            {(form.causas_ocurrencia || []).map((c: Causa, idx: number) => (
               <div key={idx} className="p-3 bg-background border border-border rounded mb-3 grid gap-2">
                 <div className="flex gap-2">
                   <input
@@ -175,7 +190,7 @@ export function D4View({
                     placeholder="RC-01"
                     value={c.codigo || ""}
                     onChange={(e) => {
-                      const copy = [...form.causas_ocurrencia];
+                      const copy = [...(form.causas_ocurrencia ?? [])];
                       copy[idx] = { ...copy[idx], codigo: e.target.value };
                       setForm({ ...form, causas_ocurrencia: copy });
                     }}
@@ -186,7 +201,7 @@ export function D4View({
                     value={c.descripcion || c.hipotesis || c.explicacion || ""}
                     onChange={(e) => {
                       const val = e.target.value;
-                      const copy = [...form.causas_ocurrencia];
+                      const copy = [...(form.causas_ocurrencia ?? [])];
                       copy[idx] = { ...copy[idx], explicacion: val };
                       setForm({ ...form, causas_ocurrencia: copy });
                     }}
