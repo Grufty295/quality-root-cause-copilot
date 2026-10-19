@@ -21,12 +21,13 @@ dependencies = [
     "uvicorn[standard]>=0.54.0",
 ]
 
-[project.scripts]
-api = "api:main"
+# Es una aplicación (se ejecuta desde el código, `uvicorn app.main:app`), no una biblioteca instalable.
+# Sin esto uv intenta construir el paquete `api` y falla: no existe src/api/__init__.py.
+[tool.uv]
+package = false
 
-[build-system]
-requires = ["uv_build>=0.13.1,<0.14.0"]
-build-backend = "uv_build"
+[tool.pytest.ini_options]
+pythonpath = ["."]
 
 [dependency-groups]
 dev = [
