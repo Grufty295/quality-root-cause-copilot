@@ -53,7 +53,7 @@ jobs:
       - name: Seed (descarga el modelo de embeddings)
         run: uv run python -m app.seed --data "${{ github.workspace }}/data/seed"
       - name: Eval del agente
-        run: uv run python -m app.evalkit.agent --name ci-humo --evals "${{ github.workspace }}/evals" --casos "${{ inputs.casos }}" --variants base --repeats 1 --concurrency 3 --out-dir "${{ github.workspace }}/reporte"
+        run: uv run python -m app.evalkit.agent --name ci-humo --evals "${{ github.workspace }}/evals" --casos "${{ inputs.casos }}" --variants con_enlaces --repeats 1 --concurrency 3 --out-dir "${{ github.workspace }}/reporte"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
