@@ -116,7 +116,19 @@ export interface AuditEntry {
   hash: string;
 }
 
+export interface ActivityEntry {
+  at: string;
+  kind: string;
+  actor: string | null;
+  actor_role: string | null;
+  discipline: string | null;
+  version_no: number | null;
+  detail: string | null;
+  reason: string | null;
+}
+
 export interface Audit {
+  activity: ActivityEntry[];
   chain_ok: boolean;
   chain_checked: number;
   head_hash: string | null;
@@ -199,8 +211,12 @@ export const api = {
   approve: (id: string, d: string, based_on_version: number) =>
     post<Section>(`/ncrs/${id}/sections/${d}/approve`, { based_on_version }),
 
-  analyze: (id: string, key: string) =>
-    post<unknown>(`/ncrs/${id}/analyze`, undefined, { "Idempotency-Key": key }),
+  analyze: (id: string, agentInstructions?: string) =>
+    post<unknown>(
+      `/ncrs/${id}/analyze`,
+      agentInstructions ? { agent_instructions: agentInstructions } : {},
+      { "Idempotency-Key": crypto.randomUUID() },
+    ),
   runs: (id: string) => request<Run[]>(`/ncrs/${id}/runs`),
   audit: (id: string) => request<Audit>(`/ncrs/${id}/audit`),
 };
@@ -230,6 +246,10 @@ export const REJECT_REASONS: { value: string; label: string }[] = [
 
 export function scopeLabel(u: User): string {
   return u.scopes.map((s) => (s.line_id ? `${s.plant_id} · ${s.line_id}` : `${s.plant_id} · planta`)).join(", ");
+}
+
+export function errorText(error: unknown): string | null {
+  return error instanceof Error ? error.message : error ? String(error) : null;
 }
 
 export function fmtDate(iso: string): string {

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { api, ApiError, ROLE_LABEL, scopeLabel, type User } from "../lib/api";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { ApiError, ROLE_LABEL, scopeLabel, type User } from "../lib/api";
+import { useLogout, useMe } from "../lib/queries";
 import { Spinner } from "./ui";
 
 const SessionContext = createContext<User | null>(null);
@@ -17,17 +18,12 @@ export function useUser(): User {
 /** Exige sesión: sin cookie válida manda a /login. */
 export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { data: user, error } = useMe();
+  const logoutMutation = useLogout();
 
   useEffect(() => {
-    api
-      .me()
-      .then(setUser)
-      .catch((e) => {
-        if (e instanceof ApiError && e.status === 401) router.replace("/login");
-        else router.replace("/login?error=api");
-      });
-  }, [router]);
+    if (error) router.replace(error instanceof ApiError && error.status === 401 ? "/login" : "/login?error=api");
+  }, [error, router]);
 
   if (!user) {
     return (
@@ -37,10 +33,7 @@ export function Shell({ children }: { children: ReactNode }) {
     );
   }
 
-  async function logout() {
-    await api.logout().catch(() => undefined);
-    router.replace("/login");
-  }
+  const logout = () => logoutMutation.mutate(undefined, { onSuccess: () => router.replace("/login") });
 
   return (
     <SessionContext.Provider value={user}>

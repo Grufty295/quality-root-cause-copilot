@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Providers } from "./providers";
 import "./globals.css";
 
 // Fuente del sistema: el build no depende de descargar fuentes de Google (falla sin red).
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

@@ -1,171 +1,240 @@
 "use client";
 
-import type { Causa, D2Content, D4Content, FuenteRef, Hecho } from "../lib/api";
-import { Badge, levelTone } from "./ui";
+import { useState } from "react";
+import { Button, ErrorBox } from "./ui";
+import { errorText, type Section } from "../lib/api";
+import { useEditSection } from "../lib/queries";
 
-function refLabel(ref: FuenteRef | undefined): string {
-  if (!ref) return "fuente sin índice";
-  if (ref.tipo === "fragmento") return [ref.documento, ref.seccion].filter(Boolean).join(" · ") || "fragmento";
-  if (ref.tipo === "herramienta") {
-    const p = ref.parametros
-      ? Object.entries(ref.parametros)
-          .map(([k, v]) => `${k}=${v}`)
-          .join(", ")
-      : "";
-    return `${ref.herramienta ?? "herramienta"}${p ? ` (${p})` : ""}`;
-  }
-  return "la NCR";
-}
+export function D2View({
+  section,
+  ncrId,
+}: {
+  section: Section;
+  ncrId: string;
+}) {
+  const content = (section.content || {}) as any;
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<any>(content);
+  const edit = useEditSection(ncrId);
+  const saving = edit.isPending;
+  const error = errorText(edit.error);
 
-export function Sources({ ids, index }: { ids: string[]; index: Record<string, FuenteRef> }) {
+  const handleSave = () =>
+    edit.mutate(
+      { discipline: "D2", version: section.version_no, content: form },
+      { onSuccess: () => setEditing(false) },
+    );
+
+  const getTexto = (field: string) => {
+    const val = form[field];
+    if (typeof val === "string") return val;
+    return val?.texto || "";
+  };
+
+  const setTexto = (field: string, text: string) => {
+    const val = form[field];
+    const prev = typeof val === "object" && val !== null ? val : {};
+    setForm({ ...form, [field]: { ...prev, texto: text } });
+  };
+
   return (
-    <span className="ml-1 inline-flex flex-wrap gap-1 align-middle">
-      {ids.map((id) => {
-        const ref = index[id];
-        return (
-          <Badge key={id} tone={levelTone(ref?.nivel)} title={`${refLabel(ref)}${ref?.nivel ? ` · ${ref.nivel}` : ""}`}>
-            <span className="font-mono">{id}</span>
-            <span className="max-w-48 truncate font-normal opacity-80">{refLabel(ref)}</span>
-          </Badge>
-        );
-      })}
-    </span>
-  );
-}
-
-function Facts({ items, index, tone = "plain" }: { items?: Hecho[]; index: Record<string, FuenteRef>; tone?: "plain" | "against" }) {
-  if (!items?.length) return null;
-  return (
-    <ul className="grid gap-1.5">
-      {items.map((h, i) => (
-        <li key={i} className={`text-sm leading-relaxed ${tone === "against" ? "text-red-800" : ""}`}>
-          <span className="mr-1 text-muted">{tone === "against" ? "✕" : "•"}</span>
-          {h.texto}
-          <Sources ids={h.fuentes} index={index} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function CauseBlock({ c, rank, index }: { c: Causa; rank: string; index: Record<string, FuenteRef> }) {
-  return (
-    <article className="grid gap-2 rounded-md border border-border p-3">
-      <header className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-muted">{rank}</span>
-        <span className="font-mono text-sm font-semibold">{c.codigo}</span>
-        {c.respaldo && (
-          <Badge
-            tone={c.respaldo === "caso" ? "green" : "amber"}
-            title={
-              c.respaldo === "caso"
-                ? "Cita evidencia del caso: datos, NCR, 8D o instrucciones"
-                : "Solo cita su fila del catálogo: es una hipótesis por verificar"
-            }
-          >
-            {c.respaldo === "caso" ? "respaldo del caso" : "solo catálogo"}
-          </Badge>
+    <div className="grid gap-3">
+      <div className="flex justify-between items-center">
+        <span className="text-xs font-mono text-muted">Editor Estructurado (5W2H) · {section.author ? `Editado por ${section.author}` : "Generado por Agente"}</span>
+        {section.kind !== "aprobacion" && !editing && (
+          <Button variant="secondary" onClick={() => setEditing(true)}>Editar</Button>
         )}
-      </header>
-      <p className="text-sm leading-relaxed">{c.explicacion}</p>
-      <div className="grid gap-1">
-        <h4 className="text-xs font-semibold text-muted">Evidencia</h4>
-        <Facts items={c.evidencia} index={index} />
       </div>
-      {!!c.evidencia_contradictoria?.length && (
-        <div className="grid gap-1">
-          <h4 className="text-xs font-semibold text-red-700">Evidencia en contra</h4>
-          <Facts items={c.evidencia_contradictoria} index={index} tone="against" />
+
+      <ErrorBox error={error} />
+
+      {!editing ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          {(["que", "donde", "cuando", "quien", "por_que", "como", "cuanto"] as const).map((field) => (
+            <div key={field} className={`p-3 bg-secondary/50 rounded border border-border ${field === "por_que" ? "md:col-span-2" : ""}`}>
+              <strong className="block text-xs uppercase font-mono text-muted mb-1">{field.replace("_", " ")}</strong>
+              <p>{getTexto(field) || "Sin definir"}</p>
+            </div>
+          ))}
         </div>
-      )}
-      <dl className="grid gap-1 text-sm sm:grid-cols-[10rem_1fr]">
-        <dt className="text-xs font-semibold text-muted">Para confirmarla</dt>
-        <dd>{c.pregunta_confirmacion}</dd>
-        {c.refutaria && (
-          <>
-            <dt className="text-xs font-semibold text-muted">La descartaría</dt>
-            <dd>{c.refutaria}</dd>
-          </>
-        )}
-        {c.dato_faltante && (
-          <>
-            <dt className="text-xs font-semibold text-muted">Dato faltante</dt>
-            <dd>{c.dato_faltante}</dd>
-          </>
-        )}
-      </dl>
-    </article>
-  );
-}
-
-export function D4View({ content }: { content: D4Content }) {
-  const index = content.indice_fuentes ?? {};
-  const insufficient = content.estado === "evidencia_insuficiente";
-  return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={insufficient ? "amber" : "green"}>
-          {insufficient ? "Evidencia insuficiente: lista de verificación" : "Candidato respaldado"}
-        </Badge>
-        {content.estado_motivo && <span className="text-xs text-muted">{content.estado_motivo}</span>}
-      </div>
-      <div className="grid gap-2">
-        <h3 className="text-sm font-semibold">Causas de ocurrencia (de más a menos probable)</h3>
-        {content.causas_ocurrencia.map((c, i) => (
-          <CauseBlock key={c.codigo + i} c={c} rank={`#${i + 1}`} index={index} />
-        ))}
-        {content.causas_ocurrencia.length === 0 && (
-          <p className="text-sm text-muted">El guardrail descartó todas las causas propuestas.</p>
-        )}
-      </div>
-      {content.causa_no_deteccion && (
-        <div className="grid gap-2">
-          <h3 className="text-sm font-semibold">Causa de no detección</h3>
-          <CauseBlock c={content.causa_no_deteccion} rank="ND" index={index} />
-        </div>
-      )}
-      {!!content.descartes?.length && (
-        <div className="grid gap-1">
-          <h3 className="text-sm font-semibold">Descartadas por el guardrail</h3>
-          <ul className="grid gap-1 text-sm">
-            {content.descartes.map((d, i) => (
-              <li key={i}>
-                <span className="font-mono font-medium">{d.codigo}</span>
-                <span className="text-muted"> · {d.motivo}</span>
-              </li>
-            ))}
-          </ul>
+      ) : (
+        <div className="grid gap-3">
+          {(["que", "donde", "cuando", "quien", "por_que", "como", "cuanto"] as const).map((field) => (
+            <div key={field} className="grid gap-1">
+              <label className="text-xs font-mono uppercase text-muted">{field.replace("_", " ")}</label>
+              <textarea
+                className="w-full bg-background border border-border rounded p-2 text-sm focus:outline-none focus:border-primary"
+                rows={2}
+                value={getTexto(field)}
+                onChange={(e) => setTexto(field, e.target.value)}
+              />
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <Button disabled={saving} onClick={handleSave}>{saving ? "Guardando..." : "Guardar Cambios"}</Button>
+            <Button variant="secondary" onClick={() => setEditing(false)}>Cancelar</Button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-const D2_FIELDS: [keyof Omit<D2Content, "indice_fuentes">, string][] = [
-  ["que", "Qué"],
-  ["por_que", "Por qué es un problema"],
-  ["donde", "Dónde"],
-  ["cuando", "Cuándo"],
-  ["quien", "Quién lo detectó"],
-  ["como", "Cómo"],
-  ["cuanto", "Cuánto"],
-];
+/** El editor anterior escribía `descripcion` e `hipotesis` junto a `explicacion`; el API ya no las acepta. */
+function withoutLegacyKeys(content: any) {
+  const clean = (causa: any) =>
+    Object.fromEntries(Object.entries(causa).filter(([key]) => key !== "descripcion" && key !== "hipotesis"));
+  return {
+    ...content,
+    causas_ocurrencia: (content.causas_ocurrencia || []).map(clean),
+    causa_no_deteccion: content.causa_no_deteccion ? clean(content.causa_no_deteccion) : null,
+  };
+}
 
-export function D2View({ content }: { content: D2Content }) {
-  const index = content.indice_fuentes ?? {};
+export function D4View({
+  section,
+  ncrId,
+}: {
+  section: Section;
+  ncrId: string;
+}) {
+  const content = (section.content || {}) as any;
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<any>(JSON.parse(JSON.stringify(content || { causas_ocurrencia: [], causa_no_deteccion: null })));
+  const edit = useEditSection(ncrId);
+  const saving = edit.isPending;
+  const error = errorText(edit.error);
+
+  const handleSave = () =>
+    edit.mutate(
+      { discipline: "D4", version: section.version_no, content: withoutLegacyKeys(form) },
+      { onSuccess: () => setEditing(false) },
+    );
+
+  const renderEvidencia = (evidencia: any) => {
+    if (!evidencia) return "Ninguna";
+    if (Array.isArray(evidencia)) {
+      return evidencia.map((e) => (typeof e === "string" ? e : e.texto || e.id || JSON.stringify(e))).join(", ");
+    }
+    if (typeof evidencia === "object") return evidencia.texto || JSON.stringify(evidencia);
+    return String(evidencia);
+  };
+
   return (
-    <dl className="grid gap-x-4 gap-y-2.5 sm:grid-cols-[10rem_1fr]">
-      {D2_FIELDS.map(([key, label]) =>
-        content[key] ? (
-          <div key={key} className="contents">
-            <dt className="text-xs font-semibold text-muted">{label}</dt>
-            <dd className="text-sm leading-relaxed">
-              {content[key].texto}
-              <Sources ids={content[key].fuentes} index={index} />
-            </dd>
+    <div className="grid gap-4">
+      <div className="flex justify-between items-center">
+        <span className="text-xs font-mono text-muted">Tarjetas de Causas Raíz · {section.author ? `Editado por ${section.author}` : "Generado por Agente"}</span>
+        {section.kind !== "aprobacion" && !editing && (
+          <Button variant="secondary" onClick={() => setEditing(true)}>Editar Tarjetas</Button>
+        )}
+      </div>
+
+      <ErrorBox error={error} />
+
+      {!editing ? (
+        <div className="grid gap-4">
+          <div>
+            <h4 className="text-xs font-mono uppercase text-muted mb-2">Causas de Ocurrencia (RC)</h4>
+            <div className="grid gap-3">
+              {(content.causas_ocurrencia || []).map((c: any, idx: number) => (
+                <div key={idx} className="p-3 bg-secondary/50 rounded border border-border">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 bg-primary/20 text-primary rounded">{c.codigo}</span>
+                    <span className="text-xs text-muted">Evidencia: {renderEvidencia(c.evidencia)}</span>
+                  </div>
+                  <p className="text-sm font-medium">{c.descripcion || c.hipotesis || c.explicacion}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        ) : null,
+
+          <div>
+            <h4 className="text-xs font-mono uppercase text-muted mb-2">Causa de No Detección (ND)</h4>
+            {content.causa_no_deteccion ? (
+              <div className="p-3 bg-secondary/50 rounded border border-border">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">{content.causa_no_deteccion.codigo}</span>
+                  <span className="text-xs text-muted">Evidencia: {renderEvidencia(content.causa_no_deteccion.evidencia)}</span>
+                </div>
+                <p className="text-sm font-medium">{content.causa_no_deteccion.descripcion || content.causa_no_deteccion.hipotesis || content.causa_no_deteccion.explicacion}</p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted">Sin causa de no detección registrada.</p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          <div>
+            <h4 className="text-xs font-mono uppercase text-muted mb-2">Causas de Ocurrencia (RC)</h4>
+            {(form.causas_ocurrencia || []).map((c: any, idx: number) => (
+              <div key={idx} className="p-3 bg-background border border-border rounded mb-3 grid gap-2">
+                <div className="flex gap-2">
+                  <input
+                    className="w-32 bg-secondary border border-border rounded p-1 text-sm font-mono"
+                    placeholder="RC-01"
+                    value={c.codigo || ""}
+                    onChange={(e) => {
+                      const copy = [...form.causas_ocurrencia];
+                      copy[idx] = { ...copy[idx], codigo: e.target.value };
+                      setForm({ ...form, causas_ocurrencia: copy });
+                    }}
+                  />
+                  <input
+                    className="flex-1 bg-secondary border border-border rounded p-1 text-sm"
+                    placeholder="Descripción de la causa..."
+                    value={c.descripcion || c.hipotesis || c.explicacion || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const copy = [...form.causas_ocurrencia];
+                      copy[idx] = { ...copy[idx], explicacion: val };
+                      setForm({ ...form, causas_ocurrencia: copy });
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-mono uppercase text-muted mb-2">Causa de No Detección (ND)</h4>
+            {form.causa_no_deteccion && (
+              <div className="p-3 bg-background border border-border rounded grid gap-2">
+                <div className="flex gap-2">
+                  <input
+                    className="w-32 bg-secondary border border-border rounded p-1 text-sm font-mono"
+                    placeholder="ND-01"
+                    value={form.causa_no_deteccion.codigo || ""}
+                    onChange={(e) => {
+                      setForm({
+                        ...form,
+                        causa_no_deteccion: { ...form.causa_no_deteccion, codigo: e.target.value },
+                      });
+                    }}
+                  />
+                  <input
+                    className="flex-1 bg-secondary border border-border rounded p-1 text-sm"
+                    placeholder="Descripción de no detección..."
+                    value={form.causa_no_deteccion.descripcion || form.causa_no_deteccion.hipotesis || form.causa_no_deteccion.explicacion || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm({
+                        ...form,
+                        causa_no_deteccion: { ...form.causa_no_deteccion, explicacion: val },
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 mt-2">
+            <Button disabled={saving} onClick={handleSave}>{saving ? "Guardando..." : "Guardar Cambios"}</Button>
+            <Button variant="secondary" onClick={() => setEditing(false)}>Cancelar</Button>
+          </div>
+        </div>
       )}
-    </dl>
+    </div>
   );
 }

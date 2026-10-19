@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { api, ROLE_LABEL, scopeLabel, type Role, type User } from "../lib/api";
+import { useState } from "react";
+import { errorText, ROLE_LABEL, scopeLabel, type Role } from "../lib/api";
+import { useDemoUsers, useLogin } from "../lib/queries";
 import { ErrorBox, Spinner } from "../components/ui";
 
 const ROLE_HINT: Record<Role, string> = {
@@ -16,27 +17,22 @@ const ORDER: Role[] = ["inspector", "ingeniero", "gerente", "auditor"];
 
 export default function LoginPage() {
   const router = useRouter();
-  const [users, setUsers] = useState<User[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const demoUsers = useDemoUsers();
+  const login = useLogin();
+  const users = demoUsers.data;
+  const error = login.error
+    ? errorText(login.error)
+    : demoUsers.error
+      ? `No se pudo contactar la API: ${errorText(demoUsers.error)}`
+      : null;
 
-  useEffect(() => {
-    api
-      .demoUsers()
-      .then(setUsers)
-      .catch((e) => setError(`No se pudo contactar la API: ${e.message}`));
-  }, []);
-
-  async function enter(username: string) {
+  function enter(username: string) {
     setBusy(username);
-    setError(null);
-    try {
-      await api.login(username);
-      router.replace("/ncrs");
-    } catch (e) {
-      setError((e as Error).message);
-      setBusy(null);
-    }
+    login.mutate(username, {
+      onSuccess: () => router.replace("/ncrs"),
+      onError: () => setBusy(null),
+    });
   }
 
   return (
