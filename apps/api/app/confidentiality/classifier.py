@@ -7,7 +7,7 @@ mismo criterio de fallo seguro que usa el resto del sistema.
 Decide dos ejes independientes (PRD, "Dos ejes independientes"):
 
 * nivel: el más alto que dé cualquier regla;
-* PII: si el texto trae nombres de personas, números de nómina o correos.
+* PII: si el texto trae nombres de personas, números de nómina, correos o teléfonos.
 
 Reglas de nivel:
 
@@ -26,8 +26,8 @@ guardar y mostrar en la traza sin filtrar lo que se detectó.
 
 Limitaciones que se declaran, no se esconden:
 
-* PII es heurística (patrón de "rol + nombre propio", nómina, correo). Puede dejar
-  pasar un nombre sin rol delante. Presidio queda como diseño (PRD, "MVP").
+* PII es heurística (patrón de "rol + nombre propio", etiqueta de contacto, nómina, correo,
+  teléfono). Puede dejar pasar un nombre sin rol ni etiqueta delante. Presidio queda como diseño (PRD, "MVP").
 * Los marcadores y el patrón de número de parte son del dataset sintético; una
   planta real los configura.
 """
@@ -72,6 +72,9 @@ _MARKERS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
     ("plano_cliente", re.compile(r"\bplanos?\s+(?:del?\s+)?(?:el\s+)?cliente\b")),
     ("csr", re.compile(r"\bcsr\b")),
+    # Un programa del cliente se nombra con una palabra clave que ningún catálogo trae ("programa Halcón del OEM").
+    ("programa_cliente", re.compile(r"\bprograma\s+\w+\s+del\s+(?:oem|cliente)\b")),
+    ("oem", re.compile(r"\boem\b")),
 )
 
 MIN_TERM_LENGTH = 3

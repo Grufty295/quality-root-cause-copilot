@@ -38,3 +38,12 @@ class Invalid(AppError):
 class Conflict(AppError):
     status_code = 409
     default_detail = "Conflicto con el estado actual"
+
+
+class TooManyRequests(AppError):
+    status_code = 429
+    default_detail = "Demasiadas peticiones"
+
+    def __init__(self, detail: str | None = None, *, retry_after_s: int | None = None) -> None:
+        super().__init__(detail)
+        self.retry_after_s = retry_after_s

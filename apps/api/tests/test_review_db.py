@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import text
 
 from tests.conftest import login
+from tests.test_ncr_content import d2, d4
 
 NCR = {
     "plant_id": "JRZ1",
@@ -37,6 +38,13 @@ def act(client, username: str, ncr, action: str, discipline: str = "D2", **body)
     return client.post(f"/ncrs/{ncr['id']}/sections/{discipline}/{action}", json=body)
 
 
+def edited(label: str) -> dict:
+    """Un D2 válido cuyo 'que' dice `label`: sirve para distinguir una edición de otra."""
+    content = d2()
+    content["que"]["texto"] = label + " en la terminal"
+    return content
+
+
 def status(client, ncr) -> str:
     login(client, "gerente.jrz1")
     return client.get(f"/ncrs/{ncr['id']}").json()["status"]
@@ -49,7 +57,7 @@ def test_engineer_edit_creates_new_version(client, ncr):
         ncr,
         "edit",
         based_on_version=1,
-        content={"resumen": "corregido"},
+        content=edited("corregido"),
     )
     assert r.status_code == 200, r.text
     body = r.json()
@@ -58,7 +66,7 @@ def test_engineer_edit_creates_new_version(client, ncr):
         "edicion",
         "ing.l1",
     )
-    assert body["content"] == {"resumen": "corregido"}
+    assert body["content"] == edited("corregido")
     assert status(client, ncr) == "pendiente_aprobacion"
 
 
@@ -69,12 +77,12 @@ def test_manager_approves_the_exact_text_reviewed(client, ncr):
         ncr,
         "edit",
         based_on_version=1,
-        content={"resumen": "corregido"},
+        content=edited("corregido"),
     )
     r = act(client, "gerente.jrz1", ncr, "approve", based_on_version=2)
     assert r.status_code == 200, r.text
     assert (r.json()["version_no"], r.json()["kind"]) == (3, "aprobacion")
-    assert r.json()["content"] == {"resumen": "corregido"}
+    assert r.json()["content"] == edited("corregido")
     assert status(client, ncr) == "aprobada"
 
 
@@ -86,14 +94,12 @@ def test_manager_can_approve_an_unedited_agent_draft(client, ncr):
 
 
 def test_stale_version_is_conflict(client, ncr):
-    act(client, "ing.l1", ncr, "edit", based_on_version=1, content={"resumen": "uno"})
+    act(client, "ing.l1", ncr, "edit", based_on_version=1, content=edited("uno"))
     # El gerente aun veia la version 1.
     r = act(client, "gerente.jrz1", ncr, "approve", based_on_version=1)
     assert r.status_code == 409
     assert "version vigente es la 2" in r.json()["detail"]
-    r = act(
-        client, "ing.l1", ncr, "edit", based_on_version=1, content={"resumen": "dos"}
-    )
+    r = act(client, "ing.l1", ncr, "edit", based_on_version=1, content=edited("dos"))
     assert r.status_code == 409
 
 
@@ -101,7 +107,7 @@ def test_stale_version_is_conflict(client, ncr):
 def test_only_engineer_edits(client, ncr, username):
     assert (
         act(
-            client, username, ncr, "edit", based_on_version=1, content={"a": 1}
+            client, username, ncr, "edit", based_on_version=1, content=edited("a")
         ).status_code
         == 403
     )
@@ -184,7 +190,7 @@ def test_engineer_can_write_after_a_rejection(client, ncr):
         ncr,
         "edit",
         based_on_version=2,
-        content={"resumen": "rehecho a mano"},
+        content=edited("rehecho a mano"),
     )
     assert r.status_code == 200
     assert status(client, ncr) == "pendiente_aprobacion"
@@ -194,7 +200,7 @@ def test_approved_section_is_final(client, ncr):
     act(client, "gerente.jrz1", ncr, "approve", based_on_version=1)
     assert (
         act(
-            client, "ing.l1", ncr, "edit", based_on_version=2, content={"a": 1}
+            client, "ing.l1", ncr, "edit", based_on_version=2, content=edited("a")
         ).status_code
         == 409
     )
@@ -213,7 +219,7 @@ def test_approved_section_is_final(client, ncr):
 def test_section_without_draft_is_conflict(client, ncr):
     assert (
         act(
-            client, "ing.l1", ncr, "edit", "D4", based_on_version=1, content={"a": 1}
+            client, "ing.l1", ncr, "edit", "D4", based_on_version=1, content=d4()
         ).status_code
         == 409
     )
@@ -237,13 +243,13 @@ def test_ncr_is_approved_only_when_every_drafted_section_is(client, ncr, db_engi
 def test_scope_is_enforced(client, ncr):
     assert (
         act(
-            client, "ing.l2", ncr, "edit", based_on_version=1, content={"a": 1}
+            client, "ing.l2", ncr, "edit", based_on_version=1, content=edited("a")
         ).status_code
         == 404
     )
     assert (
         act(
-            client, "ing.jrz2", ncr, "edit", based_on_version=1, content={"a": 1}
+            client, "ing.jrz2", ncr, "edit", based_on_version=1, content=edited("a")
         ).status_code
         == 404
     )
@@ -278,9 +284,9 @@ def test_who_opened_cannot_approve(client, db_engine):
 @pytest.mark.parametrize(
     "bad",
     [
-        {"based_on_version": 0, "content": {"a": 1}},
+        {"based_on_version": 0, "content": edited("a")},
         {"based_on_version": 1, "content": {}},
-        {"content": {"a": 1}},
+        {"content": edited("a")},
     ],
 )
 def test_invalid_edit_is_422(client, ncr, bad):
@@ -290,7 +296,7 @@ def test_invalid_edit_is_422(client, ncr, bad):
 def test_unknown_discipline_is_422(client, ncr):
     assert (
         act(
-            client, "ing.l1", ncr, "edit", "D9", based_on_version=1, content={"a": 1}
+            client, "ing.l1", ncr, "edit", "D9", based_on_version=1, content=edited("a")
         ).status_code
         == 422
     )
@@ -313,7 +319,7 @@ def test_manager_sends_an_edited_section_back_with_feedback(client, ncr):
         ncr,
         "edit",
         based_on_version=1,
-        content={"resumen": "corregido"},
+        content=edited("corregido"),
     )
     r = act(
         client,
@@ -337,7 +343,7 @@ def test_manager_sends_an_edited_section_back_with_feedback(client, ncr):
         ncr,
         "edit",
         based_on_version=3,
-        content={"resumen": "con AMEF"},
+        content=edited("con AMEF"),
     )
     assert fixed.status_code == 200
     assert (
@@ -353,3 +359,13 @@ def test_manager_rejection_needs_feedback(client, ncr):
         ).status_code
         == 422
     )
+
+
+def test_edit_that_breaks_the_section_format_is_422_and_writes_nothing(client, ncr):
+    bad = edited("corregido")
+    bad["que"] = {"texto": "sin fuentes", "citas": []}  # el formato viejo del editor
+    r = act(client, "ing.l1", ncr, "edit", based_on_version=1, content=bad)
+    assert r.status_code == 422
+    assert "no cumple el formato" in r.json()["detail"]
+    ok = act(client, "ing.l1", ncr, "edit", based_on_version=1, content=edited("bien"))
+    assert ok.status_code == 200  # la versión 1 sigue vigente: el intento fallido no escribió

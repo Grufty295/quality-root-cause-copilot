@@ -30,7 +30,11 @@ app.include_router(agent_router)
 @app.exception_handler(AppError)
 async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
     """Unico lugar donde los errores de dominio se convierten en HTTP."""
-    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+    headers = {}
+    retry_after = getattr(exc, "retry_after_s", None)
+    if retry_after:
+        headers["Retry-After"] = str(retry_after)
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=headers)
 
 
 @app.get("/health")

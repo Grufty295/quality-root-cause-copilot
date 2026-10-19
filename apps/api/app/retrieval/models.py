@@ -31,15 +31,8 @@ class DocumentKind(StrEnum):
     REQUISITO_CLIENTE = "requisito_cliente"
 
 
-SearchMode = Literal[
-    "hybrid", "text", "vector", "hybrid_w", "hybrid_doc", "hybrid_wdoc"
-]
-"""`hybrid` es el modo de producción. Los otros tres son experimentos para el eval de recuperación
-(app/evalkit/retrieval.py), sin efecto en el agente hasta que alguien los conecte:
-
-* `hybrid_w`: la rama vectorial pesa el doble en la fusión (la léxica sola acierta poco).
-* `hybrid_doc`: a lo más un fragmento por documento, para que el top-k sean k documentos distintos.
-* `hybrid_wdoc`: las dos cosas."""
+SearchMode = Literal["hybrid", "text", "vector"]
+"""`hybrid` es el modo de producción; `text` y `vector` son sus ramas por separado, para el eval."""
 
 
 class SearchQuery(BaseModel):

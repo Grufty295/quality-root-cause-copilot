@@ -123,7 +123,7 @@ def _row(
         "caso_id": caso,
         "episodio": ep,
         "split": "dev",
-        "variant": "base",
+        "variant": "con_enlaces",
         "rep": 1,
         "error": None,
         "blocked": {},
@@ -169,7 +169,7 @@ def test_breakdown_finds_the_line_that_always_fails():
         _row("EV-02", "E6", True, linea="L1"),
         _row("EV-03", "E7", False, linea="L2"),
     ]
-    bd = breakdown(rows)["base"]
+    bd = breakdown(rows)["con_enlaces"]
     assert bd["linea"]["L2"]["pass@1"] == 0.0 and bd["linea"]["L1"]["pass@1"] == 1.0
     assert bd["episodio"]["E7"]["corridas"] == 1
 
@@ -179,7 +179,7 @@ def test_breakdown_finds_the_line_that_always_fails():
 
 def _reports(**agent):
     base = {
-        "variant": "base", "split": "dev", "unsafe_output_runs": 0, "invalid_rate": 0.0,
+        "variant": "con_enlaces", "split": "dev", "unsafe_output_runs": 0, "invalid_rate": 0.0,
         "pass@1": 0.7, "rc_top1_new_cause": 0.5, "top1_cites_foreign_8d_new_cause": 0.0,
         "pass^k": 0.6, "false_abstention": 0.1, "cost_est_usd_mean": 0.04, "wall_ms_p95": 90_000,
     }  # fmt: skip
@@ -219,7 +219,7 @@ def test_missing_data_does_not_pass():
 
 def test_markdown_says_whether_it_passes():
     md = render_markdown(
-        evaluate(_reports(invalid_rate=0.1)), variant="base", split="dev"
+        evaluate(_reports(invalid_rate=0.1)), variant="con_enlaces", split="dev"
     )
     assert "**NO PASA**" in md and "medicion-valida" in md
 

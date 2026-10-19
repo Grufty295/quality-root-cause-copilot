@@ -55,6 +55,21 @@ def test_pass_needs_expected_cause_first_and_acceptable_nd():
     ]
 
 
+def test_a_case_without_enough_evidence_passes_only_by_abstaining():
+    exp = {**EXP_REC, "evidencia_suficiente": False}
+    forced = _content(["RC-01", "RC-02", "RC-03"])  # acierta el código, pero lo fuerza
+    s = score_d4(forced, exp)
+    assert not s["pass"] and s["rc_top1"] and s["abstention_correct"] is False
+    declared = {
+        **_content(["RC-02", "RC-01", "RC-03"], nd="ND-04"),
+        "estado": "evidencia_insuficiente",
+    }
+    s = score_d4(declared, exp)
+    assert s["pass"] and s["abstention_correct"] and not s["false_abstention"]
+    # sin la etiqueta, abstenerse sigue sin pasar si la causa no está primera
+    assert not score_d4(declared, EXP_REC)["pass"]
+
+
 def test_precedent_and_foreign_8d_citations():
     s = score_d4(_content(["RC-01", "RC-02", "RC-03"]), EXP_REC)
     assert s["top1_cites_precedent"] and not s["top1_cites_foreign_8d"]
@@ -110,12 +125,12 @@ def _row(caso, ep, variant, rep, ok, recurrent=True, calls=(), providers=("p",))
 
 def test_pass_hat_k_requires_every_repetition_and_episodes_weigh_equally():
     rows = [
-        _row("EV-01", "E6", "base", 1, True),
-        _row("EV-01", "E6", "base", 2, True),
-        _row("EV-02", "E6", "base", 1, True),
-        _row("EV-02", "E6", "base", 2, False),
-        _row("EV-09", "E8", "base", 1, False, recurrent=False),
-        _row("EV-09", "E8", "base", 2, False, recurrent=False),
+        _row("EV-01", "E6", "sin_enlaces", 1, True),
+        _row("EV-01", "E6", "sin_enlaces", 2, True),
+        _row("EV-02", "E6", "sin_enlaces", 1, True),
+        _row("EV-02", "E6", "sin_enlaces", 2, False),
+        _row("EV-09", "E8", "sin_enlaces", 1, False, recurrent=False),
+        _row("EV-09", "E8", "sin_enlaces", 2, False, recurrent=False),
     ]
     a = next(x for x in aggregate(rows) if x["split"] == "all")
     assert a["pass@1"] == (0.75 + 0.0) / 2  # E6: (1 + 0.5)/2; E8: 0
@@ -126,8 +141,8 @@ def test_pass_hat_k_requires_every_repetition_and_episodes_weigh_equally():
 def test_escalation_and_mixed_providers_are_reported():
     big = [{"stage": "D4", "tier": "small"}, {"stage": "D4", "tier": "large"}]
     rows = [
-        _row("EV-01", "E6", "base", 1, True, calls=big, providers=("or:A",)),
-        _row("EV-01", "E6", "base", 2, True, providers=("or:B",)),
+        _row("EV-01", "E6", "sin_enlaces", 1, True, calls=big, providers=("or:A",)),
+        _row("EV-01", "E6", "sin_enlaces", 2, True, providers=("or:B",)),
     ]
     a = next(x for x in aggregate(rows) if x["split"] == "all")
     assert a["escalated_to_large"] == 0.5
@@ -154,12 +169,12 @@ def test_escalation_and_mixed_providers_are_reported():
 
 def test_paired_comparison_lists_cases_that_change():
     rows = [
-        _row("EV-01", "E6", "base", 1, False),
-        _row("EV-01", "E6", "enlace", 1, True),
-        _row("EV-09", "E8", "base", 1, True, recurrent=False),
-        _row("EV-09", "E8", "enlace", 1, False, recurrent=False),
-        _row("EV-05", "E7", "base", 1, True),
-        _row("EV-05", "E7", "enlace", 1, True),
+        _row("EV-01", "E6", "sin_enlaces", 1, False),
+        _row("EV-01", "E6", "con_enlaces", 1, True),
+        _row("EV-09", "E8", "sin_enlaces", 1, True, recurrent=False),
+        _row("EV-09", "E8", "con_enlaces", 1, False, recurrent=False),
+        _row("EV-05", "E7", "sin_enlaces", 1, True),
+        _row("EV-05", "E7", "con_enlaces", 1, True),
     ]
     p = paired(rows)
     assert (
@@ -179,9 +194,9 @@ def _invalid(caso, ep, variant, rep):
 def test_invalid_runs_are_counted_but_do_not_enter_the_rates():
     from app.evalkit.agent import is_invalid
 
-    bad = _invalid("EV-01", "E6", "base", 1)
+    bad = _invalid("EV-01", "E6", "sin_enlaces", 1)
     assert is_invalid(bad)
-    rows = [bad, _row("EV-01", "E6", "base", 2, True)]
+    rows = [bad, _row("EV-01", "E6", "sin_enlaces", 2, True)]
     a = next(x for x in aggregate(rows) if x["split"] == "all")
     assert a["runs"] == 2 and a["errors"] == 1 and a["pass@1"] == 1.0
     only_bad = next(x for x in aggregate([bad]) if x["split"] == "all")
@@ -191,7 +206,7 @@ def test_invalid_runs_are_counted_but_do_not_enter_the_rates():
 def test_a_bad_answer_is_not_invalid():
     from app.evalkit.agent import is_invalid
 
-    row = _row("EV-01", "E6", "base", 1, False)
+    row = _row("EV-01", "E6", "sin_enlaces", 1, False)
     assert not is_invalid(row)
 
 
@@ -201,8 +216,8 @@ def test_resume_keeps_the_latest_line_per_run(tmp_path):
     from app.evalkit.agent import _load_runs
 
     p = tmp_path / "x.runs.jsonl"
-    first = _invalid("EV-01", "E6", "base", 1)
-    second = _row("EV-01", "E6", "base", 1, True)
+    first = _invalid("EV-01", "E6", "sin_enlaces", 1)
+    second = _row("EV-01", "E6", "sin_enlaces", 1, True)
     p.write_text(json.dumps(first) + "\n" + json.dumps(second) + "\n", encoding="utf-8")
     rows = _load_runs(p)
     assert len(rows) == 1 and rows[0]["score"]["pass"]
@@ -211,10 +226,36 @@ def test_resume_keeps_the_latest_line_per_run(tmp_path):
 def test_runs_saved_before_llm_errors_existed_are_still_invalid():
     from app.evalkit.agent import is_invalid
 
-    old = _row("EV-01", "E6", "base", 1, False)
+    old = _row("EV-01", "E6", "sin_enlaces", 1, False)
     old["score"] = {**old["score"], "generated": False}
     old.pop("llm_errors", None)
     old["blocked"] = {
         "D4": "- No se pudo obtener una respuesta del modelo (LLMRequestError)."
     }
     assert is_invalid(old)
+
+
+def test_consistency_rates_ignore_runs_without_diagnostics():
+    flagged = {
+        **_row("EV-01", "E6", "sin_enlaces", 1, True),
+        "diagnostics": {
+            "unanchored_causes": ["RC-10"],
+            "ungrounded_numbers": [],
+            "sin_dato_contradictions": [],
+        },
+    }
+    clean = {
+        **_row("EV-01", "E6", "sin_enlaces", 2, True),
+        "diagnostics": {
+            "unanchored_causes": [],
+            "ungrounded_numbers": ["40"],
+            "sin_dato_contradictions": [],
+        },
+    }
+    old = _row("EV-01", "E6", "sin_enlaces", 3, True)  # reporte anterior: sin el campo
+    a = next(x for x in aggregate([flagged, clean, old]) if x["split"] == "all")
+    assert a["unanchored_cause_rate"] == 0.5
+    assert a["ungrounded_number_rate"] == 0.5
+    assert a["sin_dato_contradiction_rate"] == 0.0
+    only_old = next(x for x in aggregate([old]) if x["split"] == "all")
+    assert only_old["unanchored_cause_rate"] is None

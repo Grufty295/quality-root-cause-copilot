@@ -21,9 +21,17 @@ class StubService:
         self.outcome, self.seen = outcome, []
 
     async def analyze(
-        self, user, ncr_id, *, disciplines=None, as_of=None, idempotency_key=None
+        self,
+        user,
+        ncr_id,
+        *,
+        disciplines=None,
+        as_of=None,
+        idempotency_key=None,
+        agent_instructions=None,
     ):
         self.seen.append((user.role, ncr_id, disciplines))
+        self.instructions = agent_instructions
         if isinstance(self.outcome, Exception):
             raise self.outcome
         return self.outcome
@@ -117,3 +125,14 @@ def test_agent_not_configured_is_503_not_500(client, monkeypatch):
     r = client.post(f"/ncrs/{NCR}/analyze")
     assert r.status_code == 503 and "ValueError" in r.json()["detail"]
     assert "BASE_URL" not in r.text  # no se filtra el detalle de configuración
+
+
+def test_agent_instructions_reach_the_service(client, stub):
+    svc = stub(AnalysisResult(trace_id="t"))
+    login(client, "ing.l1")
+    r = client.post(
+        f"/ncrs/{NCR}/analyze",
+        json={"disciplines": ["D4"], "agent_instructions": "Revisa el lote de terminal"},
+    )
+    assert r.status_code == 200, r.text
+    assert svc.instructions == "Revisa el lote de terminal"

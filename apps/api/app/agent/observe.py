@@ -24,10 +24,16 @@ fuera del `audit_log`. Aquí Langfuse solo recibe lo mismo que ya guarda la audi
 
 from __future__ import annotations
 
+import base64
+import contextlib
+import json
 import logging
 import os
 import time
-from collections.abc import Iterable, Mapping, Sequence
+import urllib.error
+import urllib.request
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
@@ -74,11 +80,25 @@ class AgentObserver:
         self, run_id: str, *, ncr_id: UUID, disciplines: Sequence[str]
     ) -> None: ...
 
+    def run_context(
+        self,
+        run_id: str,
+        *,
+        user_id: str,
+        session_id: str,
+        tags: Sequence[str],
+        version: str,
+    ) -> None:
+        """Atributos de la traza (quién, qué NCR, etiquetas). Se llama antes de `run_started`."""
+
     def stage_started(self, run_id: str, stage: str) -> None: ...
 
     def stage_finished(
         self, run_id: str, stage: str, duration_ms: int, ok: bool
     ) -> None: ...
+
+    def llm_call_started(self, run_id: str, stage: str) -> None:
+        """La llamada al modelo empieza ahora; `llm_call` la cierra. Permite medir su duración."""
 
     def event(self, run_id: str, stage: str, event: str, detail: str) -> None: ...
 
@@ -122,8 +142,21 @@ class CompositeObserver(AgentObserver):
     def run_started(self, run_id, *, ncr_id, disciplines):
         self._each("run_started", run_id, ncr_id=ncr_id, disciplines=disciplines)
 
+    def run_context(self, run_id, *, user_id, session_id, tags, version):
+        self._each(
+            "run_context",
+            run_id,
+            user_id=user_id,
+            session_id=session_id,
+            tags=tags,
+            version=version,
+        )
+
     def stage_started(self, run_id, stage):
         self._each("stage_started", run_id, stage)
+
+    def llm_call_started(self, run_id, stage):
+        self._each("llm_call_started", run_id, stage)
 
     def stage_finished(self, run_id, stage, duration_ms, ok):
         self._each("stage_finished", run_id, stage, duration_ms, ok)
@@ -274,6 +307,102 @@ class RecordingObserver(AgentObserver):
         return self.runs.pop(run_id, None)
 
 
+def _online_scores(state: Mapping[str, Any] | None) -> list[tuple[str, float]]:
+    """Señales deterministas de cada corrida real, sin juez de LLM: el contador de eventos del guardrail.
+
+    No miden si la respuesta es correcta (eso es el eval con respuesta esperada); miden cuánto trabajo
+    de contención hizo el sistema, que es lo que se vigila en producción.
+    """
+    if not state:
+        return []
+    events = state.get("events") or []
+
+    def count(code: str) -> float:
+        return float(sum(1 for e in events if e.get("event") == code))
+
+    return [
+        ("escalo_a_modelo_grande", 1.0 if count("escala_al_modelo_grande") else 0.0),
+        ("violaciones_guardrail", count("violaciones")),
+        ("errores_llm", count("llm_error")),
+        ("fragmentos_en_cuarentena", count("fragmento_en_cuarentena")),
+        ("disciplinas_bloqueadas", float(len(state.get("blocked") or {}))),
+    ]
+
+
+ScoreSender = Callable[[str, str, float], None]
+"""`(trace_id, nombre, valor)`. Lanza si el servidor rechaza el score."""
+
+# Hilos no daemon: el intérprete espera a que terminen al salir, así el CLI del eval no pierde scores.
+_SCORE_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="lf-score")
+
+
+def http_score_sender(
+    host: str,
+    public_key: str,
+    secret_key: str,
+    *,
+    environment: str | None = None,
+    timeout: float = 5.0,
+) -> ScoreSender:
+    """Manda cada score como UN objeto a `POST /api/public/scores`.
+
+    No se usa `score_trace` del SDK 5: agrupa los scores en un arreglo, y un Langfuse 3.162
+    (el self-hosted de este proyecto) lo rechaza con 400; el SDK solo lo registra en un hilo
+    de fondo y descarta el score. El formato objeto lo aceptan el servidor viejo y el nuevo.
+    El `id` es determinista (traza + nombre), así que repetir el envío no duplica. Lleva el mismo
+    `environment` que la traza: sin él, Langfuse lo guarda en `default` y un tablero filtrado por
+    `dev` o `prod` no ve los scores.
+    """
+    url = host.rstrip("/") + "/api/public/scores"
+    auth = "Basic " + base64.b64encode(f"{public_key}:{secret_key}".encode()).decode()
+
+    def send(trace_id: str, name: str, value: float) -> None:
+        payload: dict[str, Any] = {
+            "id": f"{trace_id}-{name}",
+            "traceId": trace_id,
+            "name": name,
+            "value": value,
+            "dataType": "NUMERIC",
+        }
+        if environment:
+            payload["environment"] = environment
+        body = json.dumps(payload).encode()
+        req = urllib.request.Request(
+            url,
+            data=body,
+            method="POST",
+            headers={"Authorization": auth, "Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=timeout):
+                return
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode(errors="replace")[:300]
+            raise RuntimeError(f"HTTP {exc.code}: {detail}") from exc
+
+    return send
+
+
+def _score_sender_from_env() -> ScoreSender | None:
+    host = os.environ.get("LANGFUSE_BASE_URL") or os.environ.get("LANGFUSE_HOST")
+    pk, sk = os.environ.get("LANGFUSE_PUBLIC_KEY"), os.environ.get("LANGFUSE_SECRET_KEY")
+    if not (host and pk and sk):
+        log.warning("Sin LANGFUSE_PUBLIC_KEY/SECRET_KEY/HOST: las trazas salen sin scores")
+        return None
+    return http_score_sender(host, pk, sk, environment=os.environ.get("ENTORNO", "dev"))
+
+
+def _propagate_attributes(ctx: Mapping[str, Any] | None):
+    """`propagate_attributes` del SDK (usuario, sesión, etiquetas, versión en la traza), o nada si no está."""
+    if not ctx:
+        return contextlib.nullcontext()
+    try:
+        from langfuse import propagate_attributes
+    except ImportError:
+        return contextlib.nullcontext()
+    return propagate_attributes(**ctx)
+
+
 class LangfuseObserver(AgentObserver):
     """Una traza de Langfuse por análisis: span raíz, un span por nodo, una `generation` por
     llamada al modelo (modelo, tokens, destino, nivel) y eventos de dominio.
@@ -290,22 +419,38 @@ class LangfuseObserver(AgentObserver):
         {"escala_al_modelo_grande", "violaciones", "llm_error", "estado_insuficiente"}
     )
 
-    def __init__(self, client: Any) -> None:
+    def __init__(self, client: Any, *, score_sender: ScoreSender | None = None) -> None:
         self._lf = client
+        self._score_sender = score_sender
+        self._score_jobs: list[Future[None]] = []
         self._roots: dict[str, Any] = {}
         self._spans: dict[tuple[str, str], Any] = {}
+        self._gens: dict[tuple[str, str], Any] = {}
+        self._current_stage: dict[str, str] = {}
+        self._ctx: dict[str, dict[str, Any]] = {}
 
     @classmethod
     def from_env(cls) -> LangfuseObserver:
-        return cls(langfuse_client())
+        return cls(langfuse_client(), score_sender=_score_sender_from_env())
+
+    def run_context(self, run_id, *, user_id, session_id, tags, version):
+        # Solo ids y etiquetas de catálogo: el usuario va por su id interno, la sesión es la NCR.
+        self._ctx[run_id] = {
+            "user_id": user_id,
+            "session_id": session_id,
+            "tags": list(tags),
+            "version": version,
+        }
 
     def run_started(self, run_id, *, ncr_id, disciplines):
-        self._roots[run_id] = self._lf.start_observation(
-            trace_context={"trace_id": run_id},
-            name="analisis_8d",
-            as_type="agent",
-            metadata={"ncr_id": str(ncr_id), "disciplinas": ",".join(disciplines)},
-        )
+        kwargs: dict[str, Any] = {
+            "trace_context": {"trace_id": run_id},
+            "name": "analisis_8d",
+            "as_type": "agent",
+            "metadata": {"ncr_id": str(ncr_id), "disciplinas": ",".join(disciplines)},
+        }
+        with _propagate_attributes(self._ctx.pop(run_id, None)):
+            self._roots[run_id] = self._lf.start_observation(**kwargs)
 
     def stage_started(self, run_id, stage):
         root = self._roots.get(run_id)
@@ -313,8 +458,20 @@ class LangfuseObserver(AgentObserver):
             self._spans[(run_id, stage)] = root.start_observation(
                 name=stage, as_type="chain"
             )
+            self._current_stage[run_id] = stage
+
+    def llm_call_started(self, run_id, stage):
+        root = self._roots.get(run_id)
+        if root is None:
+            return
+        parent = self._spans.get((run_id, self._current_stage.get(run_id, ""))) or root
+        self._gens[(run_id, stage)] = parent.start_observation(
+            name=f"llm:{stage}", as_type="generation"
+        )
 
     def stage_finished(self, run_id, stage, duration_ms, ok):
+        if self._current_stage.get(run_id) == stage:
+            self._current_stage.pop(run_id, None)
         span = self._spans.pop((run_id, stage), None)
         if span is not None:
             if not ok:
@@ -352,9 +509,7 @@ class LangfuseObserver(AgentObserver):
         extra: dict[str, Any] = {}
         if call.cost_usd is not None:
             extra["cost_details"] = {"total": call.cost_usd}
-        gen = root.start_observation(
-            name=f"llm:{call.stage}",
-            as_type="generation",
+        fields: dict[str, Any] = dict(
             model=call.model,
             usage_details={"input": call.input_tokens, "output": call.output_tokens},
             metadata={
@@ -370,7 +525,13 @@ class LangfuseObserver(AgentObserver):
             level=None if call.ok else "ERROR",
             **extra,
         )
-        gen.end()
+        started = self._gens.pop((run_id, call.stage), None)
+        if started is not None:
+            # La generación se abrió antes de la llamada: su duración en Langfuse es la real.
+            started.update(**fields)
+            started.end()
+            return
+        root.start_observation(name=f"llm:{call.stage}", as_type="generation", **fields).end()
 
     def retrieved(self, run_id, search, refs):
         root = self._roots.get(run_id)
@@ -382,16 +543,39 @@ class LangfuseObserver(AgentObserver):
 
     def run_finished(self, run_id, *, state, duration_ms, error):
         root = self._roots.pop(run_id, None)
+        for key in [k for k in self._gens if k[0] == run_id]:
+            self._gens.pop(key).end()
         for key in [k for k in self._spans if k[0] == run_id]:
             self._spans.pop(key).end()
+        self._current_stage.pop(run_id, None)
+        self._ctx.pop(run_id, None)
         if root is not None:
             root.update(
                 metadata={"duracion_ms": duration_ms, "error": error},
                 level="ERROR" if error else None,
             )
+            self._send_scores(run_id, _online_scores(state))
             root.end()
 
+    def _send_scores(self, run_id: str, scores: list[tuple[str, float]]) -> None:
+        send = self._score_sender
+        if send is None or not scores:
+            return
+
+        def job() -> None:
+            for name, value in scores:
+                try:
+                    send(run_id, name, value)
+                except Exception as exc:  # noqa: BLE001 - un score perdido se registra, no rompe
+                    log.warning("Langfuse rechazó el score %s: %s", name, exc)
+
+        self._score_jobs = [j for j in self._score_jobs if not j.done()]
+        self._score_jobs.append(_SCORE_POOL.submit(job))
+
     def close(self):
+        for job in self._score_jobs:
+            job.result()
+        self._score_jobs.clear()
         self._lf.flush()
 
 
@@ -407,7 +591,14 @@ def langfuse_client() -> Any:
             "TRACE_EXPORTER=langfuse sin LANGFUSE_HOST: se niega a usar el host por defecto "
             "(cloud.langfuse.com). Define LANGFUSE_HOST con tu instancia."
         )
-    from langfuse import Langfuse  # dependencia opcional (grupo `observabilidad`)
+    try:
+        from langfuse import Langfuse  # dependencia opcional (grupo `observabilidad`)
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "TRACE_EXPORTER=langfuse, pero la imagen se construyó sin el grupo `observabilidad`. "
+            "Reconstruye con `make build-evals`, o deja TRACE_EXPORTER vacío en .env y "
+            "recrea el servicio (`docker compose up -d api`)."
+        ) from exc
 
     # Sin `mask`: en el SDK la máscara se aplica también a `metadata` y borraría lo único
     # que se manda. La garantía es estructural: este módulo nunca pasa input ni output.

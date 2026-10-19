@@ -24,9 +24,11 @@ from uuid import UUID
 from sqlalchemy import Connection
 from sqlalchemy.exc import DBAPIError
 
+from app.agent.catalog import load_catalog
 from app.core.errors import Conflict, Forbidden, Invalid
 from app.modules.auth.models import CurrentUser
 from app.modules.ncr import repository as repo
+from app.modules.ncr.content import validate_content
 from app.modules.ncr.models import LatestVersion, SectionView
 from app.modules.ncr.service import NcrService
 
@@ -34,7 +36,6 @@ EDIT_ROLES: Final = ("ingeniero",)
 REJECT_ROLES: Final = ("ingeniero", "gerente")
 APPROVE_ROLES: Final = ("gerente",)
 
-MAX_CONTENT_BYTES = 64 * 1024
 MIN_FEEDBACK_CHARS = 10
 
 # Motivos tipificados del rechazo. Deben coincidir con el CHECK de la migracion 0014
@@ -49,21 +50,6 @@ REJECT_REASONS: Final = (
 )
 
 _INSUFFICIENT_PRIVILEGE = "42501"
-
-
-def validate_content(discipline: str, content: dict[str, Any]) -> None:
-    """Punto de enchufe del esquema Pydantic de cada disciplina.
-
-    Todavia no existen los modelos de D2/D3/D4 (los define el agente). Mientras
-    tanto solo se exige un objeto no vacio y de tamano razonable. Cuando existan,
-    se valida aqui con el de `discipline`.
-    """
-    import json
-
-    if not content:
-        raise Invalid("El contenido no puede estar vacio")
-    if len(json.dumps(content).encode()) > MAX_CONTENT_BYTES:
-        raise Invalid("El contenido es demasiado grande")
 
 
 class ReviewService:
@@ -82,7 +68,8 @@ class ReviewService:
         content: dict[str, Any],
     ) -> SectionView:
         self._require_role(user, EDIT_ROLES, "editar")
-        validate_content(discipline, content)
+        catalog = load_catalog(self._conn, user.id) if discipline == "D4" else None
+        validate_content(discipline, content, catalog)
         latest = self._open_for_review(user, ncr_id, discipline, based_on)
         if latest.kind == "aprobacion":
             raise Conflict("La seccion ya esta aprobada")

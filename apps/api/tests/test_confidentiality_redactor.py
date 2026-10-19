@@ -243,3 +243,14 @@ def test_abbreviated_titles_between_role_and_name_are_covered():
     assert (
         names("Ing. de procesos revisó") == []
     )  # minúscula después del título: no es un nombre
+
+
+def test_phone_numbers_and_labeled_names_are_pseudonymized(redactor, ncr):
+    out = one(
+        redactor,
+        ncr,
+        "Contacto del reportante: Paola Ríos Saucedo, celular 656 123 4567. Paola Ríos Saucedo confirma.",
+    )
+    for secret in ("Paola", "Ríos", "Saucedo", "656 123 4567"):
+        assert secret not in out
+    assert "[TELEFONO_1]" in out and out.count("[PERSONA_1]") == 2

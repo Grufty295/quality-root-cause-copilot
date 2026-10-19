@@ -42,7 +42,7 @@ def test_load_structured_creates_everything(service, db_conn, estructurados):
         2,
         2,
         2,
-        6,
+        9,  # 5 del dataset + 4 de demo (jrz2)
     )
     roles = dict(
         db_conn.execute(text("SELECT username, role::text FROM app_user")).all()

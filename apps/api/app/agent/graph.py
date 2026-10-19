@@ -62,7 +62,7 @@ from app.modules.auth.models import CurrentUser
 from app.modules.ncr import repository as ncr_repo
 from app.modules.ncr.models import Ncr
 from app.retrieval.embedder import Embedder
-from app.retrieval.models import DocumentKind, SearchHit, SearchMode
+from app.retrieval.models import DocumentKind, SearchHit
 from app.retrieval.service import RetrievalService
 
 QUERY_CHARS = 600
@@ -134,6 +134,10 @@ class AgentState(TypedDict, total=False):
     prior: dict[str, Prior]
     catalog: CauseCatalog
     trace_id: str
+    instructions: str | None
+    """Indicaciones opcionales del ingeniero para esta corrida. No son evidencia: no se citan."""
+    classifier: RuleClassifier
+    """Clasificador con el catálogo vigente. Lo pone `gather`; `_ctx` lo usa para el texto de revisión."""
     # trabajo
     book: EvidenceBook
     catalog_ids: list[tuple[str, Any]]
@@ -156,17 +160,13 @@ class AgentDeps:
     engine: Engine
     gateway: ModelGateway
     embedder: Embedder
-    tool_budget: int = 15  # D4 usa 13; con expansión por enlace, 14
+    tool_budget: int = 17  # D4 usa 15; con expansión por enlace, 16
     d4_max_rounds: int = 2
     expand_case_links: bool = False
     """Sigue los enlaces del top de `search_cases` (8D recuperado o NCR que cita un 8D) hasta
     la sección D4 de ese 8D. Apagado por defecto hasta que el eval del agente diga si ayuda:
     trae la causa del precedente, pero también la de 8D de otra causa (ver docs/evaluacion.md)."""
-    catalog_chars: int = 260
-    """Límite de caracteres para renderizar las entradas del catálogo en el prompt de D4 (default 260, variante `enlace_fix_cat` lo eleva a 1400)."""
     max_linked_8d: int = 2
-    controls_mode: SearchMode = "hybrid"
-    """Modo de `search_controls`. Solo cambia en variantes del eval (`enlace_ctl`)."""
     observer: AgentObserver | None = None
     """Observador de todas las corridas (p. ej. Langfuse). `run` puede sumar otro por corrida."""
     extra: dict[str, Any] = field(default_factory=dict)
@@ -218,9 +218,20 @@ class AgentGraph:
         run_id = state.setdefault("trace_id", uuid.uuid4().hex)
         obs = CompositeObserver([self._d.observer, observer])  # type: ignore[list-item]
         state["observer"] = obs
-        obs.run_started(
-            run_id, ncr_id=state["ncr"].id, disciplines=state["disciplines"]
+        ncr = state["ncr"]
+        obs.run_context(
+            run_id,
+            user_id=str(state["user"].id),
+            session_id=str(ncr.id),
+            tags=[
+                f"nivel:{ncr.detected_level}",
+                f"planta:{ncr.plant_id}",
+                f"linea:{ncr.line_id}",
+                *(f"disciplina:{d}" for d in state["disciplines"]),
+            ],
+            version=prompts.PROMPT_VERSION,
         )
+        obs.run_started(run_id, ncr_id=ncr.id, disciplines=state["disciplines"])
         started = time.perf_counter()
         final: AgentState | None = None
         error: str | None = None
@@ -268,7 +279,6 @@ class AgentGraph:
                 ToolBudget(self._d.tool_budget),
                 as_of=state.get("as_of"),
                 exclude_sources=state.get("exclude_sources", ()),
-                controls_mode=self._d.controls_mode,
             )
             classifier = RuleClassifier(ncr_repo.catalog_terms(conn))
             end = min(ncr.created_at.date(), state["as_of"] or date.max)
@@ -294,6 +304,9 @@ class AgentGraph:
             "book": book,
             "catalog_ids": catalog_ids,
             "index_version": index_version,
+            # BUG-20: sin esto `_ctx` no tenía clasificador y todo texto de revisión caía en
+            # confidencial (fail-closed), aunque fuera interno.
+            "classifier": classifier,
         }
 
     def _run_data_tools(
@@ -318,6 +331,9 @@ class AgentGraph:
             calls += [
                 lambda: tools.defect_summary(
                     ncr.plant_id, ncr.line_id, start, end, group_by="semana"
+                ),
+                lambda: tools.defect_summary(
+                    ncr.plant_id, ncr.line_id, start, end, group_by="estacion_turno"
                 ),
                 lambda: tools.defect_summary(
                     ncr.plant_id, ncr.line_id, start, end, group_by="aplicador"
@@ -365,20 +381,18 @@ class AgentGraph:
         self, state: AgentState, tools: QualityTools, book: EvidenceBook, ncr: Ncr
     ) -> None:
         query = build_query(ncr.description, ncr.part_number)
-        batches: list[list[SearchHit]] = []
-        for name, search in (
-            ("search_cases", tools.search_cases),
-            ("search_controls", tools.search_controls),
-        ):
+        batches: list[list[SearchHit]] = [[], []]
+        for slot, name in enumerate(("search_cases", "search_controls")):
+            search = getattr(tools, name)
             t0 = time.perf_counter()
             try:
-                batches.append(search(query))
+                batches[slot] = search(query)
                 _tool_timed(state, name, t0)
             except ToolError as exc:
                 _tool_timed(state, name, t0, ok=False)
                 _event(state, "gather", "tool_rechazada", str(exc)[:200])
-                batches.append([])
-            _retrieved(state, name, batches[-1])
+                batches[slot] = []
+            _retrieved(state, name, batches[slot])
         if self._d.expand_case_links and batches[0]:
             linked = linked_8d(batches[0], self._d.max_linked_8d)
             if linked:
@@ -435,8 +449,17 @@ class AgentGraph:
             previous=prior.previous_draft if prior else None,
             feedback=prior.feedback if prior else None,
             reason=prior.feedback_reason if prior else None,
+            instructions=state.get("instructions"),
         )
-        ctx = self._ctx(state, Stage.D2, [e for e in book.all() if e.id in ids])
+        # BUG-20: D2 también manda feedback y borrador previo al modelo; su nivel cuenta.
+        ctx = self._ctx(
+            state,
+            Stage.D2,
+            [e for e in book.all() if e.id in ids],
+            feedback=prior.feedback if prior else None,
+            prior_draft=prior.previous_draft if prior else None,
+            instructions=state.get("instructions"),
+        )
         content, why = await self._generate(
             state, Stage.D2, ctx, messages, D2Draft, lambda d: verify_d2(d, book), "D2"
         )
@@ -470,15 +493,19 @@ class AgentGraph:
             previous=prior.previous_draft if prior else None,
             feedback=prior.feedback if prior else None,
             reason=prior.feedback_reason if prior else None,
+            instructions=state.get("instructions"),
         )
-        # Pasa feedback, prior_draft e inherited_d2 a _ctx para BUG-20
+        # BUG-20: todo texto que entra al prompt cuenta para el nivel: feedback, borrador
+        # previo, D2 vigente (generado o heredado) e indicaciones del ingeniero.
         ctx = self._ctx(
             state,
             Stage.D4,
             book.all(),
             tier=tier,
             feedback=prior.feedback if prior else None,
-            prior_draft=prior.draft_json if prior else None,
+            prior_draft=prior.previous_draft if prior else None,
+            inherited_d2=d2_dict,
+            instructions=state.get("instructions"),
         )
 
         def verify(draft: D4Draft):
@@ -566,6 +593,7 @@ class AgentGraph:
         violations: list[Violation] = []
         content = None
         for attempt in range(rounds):
+            _observer(state).llm_call_started(state["trace_id"], stage.value)
             try:
                 res: GatewayStructuredResult[
                     Any
@@ -659,8 +687,9 @@ class AgentGraph:
         *,
         tier: ModelTier | None = None,
         feedback: str | None = None,
-        prior_draft: str | None = None,
-        inherited_d2: str | None = None,
+        prior_draft: str | dict | None = None,
+        inherited_d2: str | dict | None = None,
+        instructions: str | None = None,
     ) -> RouteContext:
         ncr = state["ncr"]
         frags = [e for e in evidence if e.kind == "fragmento"]
@@ -671,7 +700,11 @@ class AgentGraph:
             else ConfidentialityLevel(ncr.detected_level)
         )
         classifier = state.get("classifier")
-        extra_texts = [t for t in (feedback, prior_draft, inherited_d2) if t]
+        extra_texts = [
+            t if isinstance(t, str) else json.dumps(t, ensure_ascii=False)
+            for t in (feedback, prior_draft, inherited_d2, instructions)
+            if t
+        ]
         extra_levels = []
         extra_pii = ncr.contains_pii is not False or any(e.contains_pii for e in tools)
         for text in extra_texts:

@@ -51,7 +51,7 @@ def _row(**over):
         "run_id": "a" * 32,
         "caso_id": "EV-01",
         "episodio": "E6",
-        "variant": "base",
+        "variant": "sin_enlaces",
         "rep": 1,
         "ncr_id": str(uuid4()),
         "user_id": str(uuid4()),

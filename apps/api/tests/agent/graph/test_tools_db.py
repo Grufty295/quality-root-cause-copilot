@@ -162,6 +162,7 @@ def test_as_of_hides_future_maintenance(tools_for):
         "aplicador",
         "lote_terminal",
         "deteccion",
+        "estacion_turno",
     ],
 )
 def test_every_grouping_runs_and_adds_up(tools_for, group_by):
@@ -176,6 +177,23 @@ def test_every_grouping_runs_and_adds_up(tools_for, group_by):
         assert sum(counts) == 15  # solo los eventos con el dato
     else:
         assert sum(counts) == 17 and "total 17 piezas" in out.text
+
+
+def test_station_by_shift_shows_the_prior_period_as_baseline(tools_for):
+    """Cada grupo trae lo que tenía en el periodo anterior; un pico sin antecedente se dice."""
+    out = tools_for().defect_summary(
+        "JRZ1", "L1", TODAY - timedelta(days=30), TODAY, group_by="estacion_turno"
+    )
+    rows = [line for line in out.text.splitlines() if line.startswith("- ")]
+    assert rows and all(" · turno " in r and "periodo anterior: " in r for r in rows)
+    assert any("(sin antecedente)" in r or "(×" in r for r in rows)  # Crimpado: 15 piezas
+
+
+def test_baseline_is_only_added_to_the_cuts_that_ask_for_it(tools_for):
+    out = tools_for().defect_summary(
+        "JRZ1", "L1", TODAY - timedelta(days=30), TODAY, group_by="estacion"
+    )
+    assert "periodo anterior" not in out.text
 
 
 def test_family_uses_the_catalog_name(tools_for):

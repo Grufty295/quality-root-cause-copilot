@@ -4,7 +4,7 @@ Reemplaza, antes de que un texto salga hacia el destino api, lo que no debe sali
 
 * clientes y números de parte del catálogo (de nivel interno o confidencial);
 * números de parte con forma de catálogo que no están en él;
-* PII: nombres de personas, números de nómina y correos.
+* PII: nombres de personas, números de nómina, correos y teléfonos.
 
 Cada valor se cambia por un marcador estable dentro de la NCR (`[CLIENTE_1]`),
 guardado en `pseudonym_map`. Al volver la respuesta del modelo, `restore` deja
@@ -41,7 +41,7 @@ from app.confidentiality.text import squash, squash_with_map
 
 MIN_TERM_LENGTH = 3
 MAX_PASSES = 3
-_LEARNED = frozenset({"persona", "nomina", "correo"})
+_LEARNED = frozenset({"persona", "nomina", "correo", "telefono"})
 _PLACEHOLDER = re.compile(r"\[([A-Z]+)_(\d+)\]")
 
 
@@ -52,7 +52,7 @@ class RedactionResult:
     """Reemplazos por tipo de entidad (`{"cliente": 1, "persona": 2}`). Sin valores."""
 
 
-PII_TYPES: frozenset[str] = frozenset({"persona", "nomina", "correo"})
+PII_TYPES: frozenset[str] = frozenset({"persona", "nomina", "correo", "telefono"})
 """Tipos que se seudonimizan también hacia el modelo local (RouteDecision.must_pseudonymize)."""
 
 

@@ -24,6 +24,7 @@ clave, una segunda petición mientras la primera trabaja recibe 409 en vez de du
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -35,10 +36,13 @@ from app.agent import repository as repo
 from app.agent import runs
 from app.agent.catalog import load_catalog
 from app.agent.graph import AgentDeps, AgentGraph, AgentState, CallInfo
+from app.agent.guardrails import detect_injection
+from app.agent.guardrails.diagnostics import as_events, diagnose
+from app.agent.limits import AnalysisLimiter
 from app.agent.manifest import build_manifest
 from app.agent.observe import AgentObserver, CompositeObserver, RecordingObserver
-from app.agent.prompts import PROMPT_VERSION
-from app.core.errors import Conflict, Forbidden
+from app.agent.prompts import PROMPT_VERSION, case_block
+from app.core.errors import Conflict, Forbidden, Invalid
 from app.modules.auth.models import CurrentUser
 from app.modules.ncr import repository as ncr_repo
 from app.modules.ncr.review import status_for
@@ -72,9 +76,10 @@ class AnalysisResult:
 
 
 class AnalysisService:
-    def __init__(self, deps: AgentDeps) -> None:
+    def __init__(self, deps: AgentDeps, *, limiter: AnalysisLimiter | None = None) -> None:
         self._deps = deps
         self._graph = AgentGraph(deps)
+        self._limiter = limiter or AnalysisLimiter.from_env()
 
     async def analyze(
         self,
@@ -86,9 +91,19 @@ class AnalysisService:
         exclude_sources: tuple[str, ...] = (),
         idempotency_key: str | None = None,
         observer: AgentObserver | None = None,
+        agent_instructions: str | None = None,
     ) -> AnalysisResult:
         if user.role not in ANALYZE_ROLES:
             raise Forbidden("Tu rol no ejecuta el agente")
+        instructions = " ".join((agent_instructions or "").split()) or None
+        if instructions:
+            hits = detect_injection(instructions)
+            if hits:
+                # Se rechaza antes de crear la corrida: el ingeniero corrige el texto y reintenta.
+                raise Invalid(
+                    "Las indicaciones parecen órdenes para cambiar las reglas del agente "
+                    f"({', '.join(hits)}). Descríbelas como qué revisar o qué considerar."
+                )
         wanted = tuple(
             d for d in DISCIPLINES if disciplines is None or d in disciplines
         )
@@ -99,6 +114,31 @@ class AnalysisService:
             if previous is not None:
                 return previous
 
+        # Cupo después del replay: repetir una Idempotency-Key ya resuelta no consume un análisis.
+        with self._limiter.slot(user.id):
+            return await self._run(
+                user,
+                ncr_id,
+                wanted=wanted,
+                as_of=as_of,
+                exclude_sources=exclude_sources,
+                idempotency_key=idempotency_key,
+                observer=observer,
+                instructions=instructions,
+            )
+
+    async def _run(
+        self,
+        user: CurrentUser,
+        ncr_id: UUID,
+        *,
+        wanted: tuple[str, ...],
+        as_of: date | None,
+        exclude_sources: tuple[str, ...],
+        idempotency_key: str | None,
+        observer: AgentObserver | None,
+        instructions: str | None,
+    ) -> AnalysisResult:
         ncr, prior, catalog, versions, skipped, todo = await asyncio.to_thread(
             self._read, user, ncr_id, wanted, as_of
         )
@@ -121,11 +161,24 @@ class AnalysisService:
                 "prior": prior,
                 "catalog": catalog,
                 "trace_id": run_id,
+                "instructions": instructions,
             }
+            if instructions:
+                state["events"] = [
+                    {
+                        "stage": "entrada",
+                        "event": "indicaciones_revisor",
+                        "detail": f"{len(instructions)} caracteres",
+                    }
+                ]
             final = await self._graph.run(
                 state,
                 CompositeObserver([recorder, observer]),  # type: ignore[list-item]
             )
+            final["events"] = [
+                *final.get("events", []),
+                *_diagnostic_events(ncr, final),
+            ]
             produced = {"D2": final.get("d2"), "D4": final.get("d4")}
             if any(produced[d] is not None for d in todo):
                 written = await asyncio.to_thread(
@@ -145,6 +198,7 @@ class AnalysisService:
                 error,
                 int((time.perf_counter() - started) * 1000),
                 recorder.pop(run_id),
+                instructions,
             )
         result = AnalysisResult(
             trace_id=run_id,
@@ -225,6 +279,7 @@ class AnalysisService:
         error: str | None,
         duration_ms: int,
         record,
+        instructions: str | None = None,
     ) -> dict[str, Any]:
         """Cierra la corrida. Nunca tapa el error original: si cerrar falla, se registra y sigue."""
         state = final or {}
@@ -253,6 +308,10 @@ class AnalysisService:
                     "usage": usage,
                     "error": error,
                 }
+                if instructions:
+                    # Texto completo: el auditor necesita ver qué se le pidió al agente. /runs ya
+                    # excluye al inspector; el texto se clasificó en `_ctx` antes de cualquier envío.
+                    outcome["agent_instructions"] = instructions
                 runs.finish(
                     conn,
                     run_id,
@@ -358,6 +417,35 @@ class AnalysisService:
                 conn, ncr_id, status_for(ncr_repo.latest_kinds(conn, ncr_id))
             )
         return written
+
+
+log = logging.getLogger(__name__)
+
+
+def _dump(x: Any) -> Any:
+    return x.model_dump() if hasattr(x, "model_dump") else x
+
+
+def _diagnostic_events(ncr, final: AgentState) -> list[dict[str, str]]:
+    """Diagnósticos de consistencia como eventos de la corrida. Solo informan: no cambian el
+    borrador ni el estado. Un fallo aquí nunca debe tumbar el análisis."""
+    try:
+        d2, d4 = final.get("d2"), final.get("d4")
+        if d2 is None and d4 is None:
+            return []
+        prior = (final.get("prior") or {}).get("D2")
+        d2_content = (
+            _dump(d2)
+            if d2 is not None
+            else (prior.content if prior and prior.kind != "rechazo" else None)
+        )
+        book = final.get("book")
+        sources = [case_block(ncr), *(e.body for e in (book.all() if book else []))]
+        found = diagnose(d2=d2_content, d4=_dump(d4), sources=sources)
+        return as_events(found)
+    except Exception:
+        log.warning("diagnósticos de consistencia fallaron", exc_info=True)
+        return []
 
 
 def _citations(discipline: str, data: dict, book) -> list[tuple[str, UUID]]:

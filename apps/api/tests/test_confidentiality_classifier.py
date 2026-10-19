@@ -110,6 +110,11 @@ def test_structured_field_with_unknown_level_is_confidential(classify):
         ("Empleado 48213 realizo el ajuste", "pii:nomina"),
         ("nomina: 123456", "pii:nomina"),
         ("Avisar a juan.perez@empresa.com", "pii:correo"),
+        ("Contacto del reportante: Paola Rios Saucedo", "pii:persona"),
+        ("Reportado por Luis Hernandez en el turno 2", "pii:persona"),
+        ("Llamar al celular 656 123 4567", "pii:telefono"),
+        ("tel: 656-123-4567", "pii:telefono"),
+        ("Marcar al 656 123 4567 para confirmar", "pii:telefono"),
     ],
 )
 def test_pii_is_detected_on_its_own_axis(classify, text, reason):
@@ -155,3 +160,33 @@ def test_known_limitation_a_name_without_a_role_is_not_detected(classify):
     Si esto cambia (p. ej. con Presidio), esta prueba debe actualizarse a proposito.
     """
     assert classify("Juan Perez cambio el aplicador").contains_pii is False
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Lote 1234567890 de terminales TRM-A-1064",  # 10 dígitos seguidos sin contexto: un lote, no un teléfono
+        "Pedido 20260922 cantidad 3, fecha 2026-09-22",
+        "Contacto: Calidad planta 1",  # una etiqueta seguida de un área, no de un nombre
+        "Reportó Mantenimiento que la prensa tenía ruido",
+        "Responsable: Producción turno 2",
+    ],
+)
+def test_ordinary_numbers_and_departments_after_a_label_are_not_pii(classify, text):
+    assert classify(text).contains_pii is False
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Nota del SQE: estos arneses comparten circuito con el programa Halcón del OEM.",
+        "El OEM pidió contención del lote.",
+        "Cambio solicitado en el programa Halcón del cliente",
+    ],
+)
+def test_a_reference_to_the_oem_or_a_customer_program_is_confidential(classify, text):
+    assert classify(text).level is L.CONFIDENCIAL
+
+
+def test_a_maintenance_program_is_not_mistaken_for_a_customer_program(classify):
+    assert classify("Programa de mantenimiento preventivo vencido en la prensa").level is L.INTERNO

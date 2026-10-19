@@ -84,30 +84,6 @@ def test_langfuse_herramienta_como_span_tipo_tool():
     assert span.kw["as_type"] == "tool" and span.kw["metadata"] == {"duracion_ms": 900}
 
 
-def test_controls_mode_no_cambia_el_config_id_de_produccion():
-    """El config_id de la configuración sellada no debe moverse; la variante exploratoria sí."""
-    from types import SimpleNamespace
-
-    from app.agent.manifest import build_manifest
-
-    def deps(mode):
-        d = SimpleNamespace(
-            tool_budget=15, d4_max_rounds=2, expand_case_links=True, max_linked_8d=2,
-            controls_mode=mode,
-            gateway=SimpleNamespace(settings=SimpleNamespace(local=_dest(), api=None)),
-        )
-        return d
-
-    prod = build_manifest(deps("hybrid"), index_version="i", catalog=None)
-    legacy = build_manifest(
-        SimpleNamespace(**{k: v for k, v in vars(deps("hybrid")).items() if k != "controls_mode"}),
-        index_version="i", catalog=None,
-    )
-    exp = build_manifest(deps("hybrid_wdoc"), index_version="i", catalog=None)
-    assert prod["config_id"] == legacy["config_id"]
-    assert exp["config_id"] != prod["config_id"]
-
-
 def _dest():
     from decimal import Decimal
 

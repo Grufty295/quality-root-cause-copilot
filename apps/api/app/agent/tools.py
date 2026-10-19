@@ -24,7 +24,7 @@ from typing import Literal
 from sqlalchemy import Connection, text
 
 from app.modules.auth.models import CurrentUser
-from app.retrieval.models import DocumentKind, SearchHit, SearchMode, SearchQuery
+from app.retrieval.models import DocumentKind, SearchHit, SearchQuery
 from app.retrieval.service import RetrievalService
 
 MAX_RANGE_DAYS = 400
@@ -39,6 +39,7 @@ GroupBy = Literal[
     "lote_terminal",
     "deteccion",
     "parte",
+    "estacion_turno",
 ]
 MAX_GROUPS = 40
 MAX_WEEKS = 13
@@ -55,6 +56,10 @@ _DIMENSIONS: dict[str, tuple[str, str | None]] = {
     "lote_terminal": ("e.terminal_lot", "e.terminal_lot IS NOT NULL"),
     "deteccion": ("coalesce(e.detection_point, '(sin dato)')", None),
     "parte": ("coalesce(p.part_number, '(sin parte)')", None),
+    # Estación × turno: la firma de un cambio local (personal nuevo, receta, herramental) no se ve
+    # en el conteo por estación (domina la estación con más volumen) ni por turno (promedia
+    # todas las estaciones). Va acompañado de su línea base: el mismo corte en el periodo anterior.
+    "estacion_turno": ("coalesce(e.station, '(sin estación)') || ' · turno ' || e.shift::text", None),
 }
 # Dimensiones con denominador propio en `production`; las demás se miden contra la producción de la línea
 # (familia, estación, punto de detección) o no tienen denominador (aplicador, lote).
@@ -64,7 +69,9 @@ _RATE_KEY = {
     "semana": "to_char(date_trunc('week', produced_on), 'YYYY-MM-DD')",
     "parte": "part_id",
 }
-_LINE_RATE = frozenset({"familia", "estacion", "deteccion"})
+_LINE_RATE = frozenset({"familia", "estacion", "deteccion", "estacion_turno"})
+# Cortes que muestran el periodo anterior de la misma duración como línea base.
+_WITH_BASELINE = frozenset({"estacion_turno"})
 # Las detecciones tardías (cliente, laboratorio) llegan 3 a 10 días después de fabricar. Ojo con la
 # redacción de los avisos: una frase como «reclamos de cliente» activa un marcador del clasificador
 # y manda el D2 a local aunque el dato sea interno.
@@ -172,8 +179,6 @@ class QualityTools:
     today: date = field(default_factory=lambda: datetime.now(UTC).date())
     exclude_sources: tuple[str, ...] = ()
     """Documentos que la recuperación no devuelve (el propio caso en un replay)."""
-    controls_mode: SearchMode = "hybrid"
-    """Modo de `search_controls`. Distinto de `hybrid` solo en los experimentos del eval."""
 
     # ------------------------------------------------------------------ datos
 
@@ -248,8 +253,20 @@ class QualityTools:
         units, line_units = self._production(
             plant_id, line_id, date_from, date_to, shift, group_by
         )
+        prior = (
+            self._baseline(expr, where, binds, start, end)
+            if group_by in _WITH_BASELINE
+            else None
+        )
         for k, n, *_ in shown:
             entry = f"- {k}: {n} ({100 * n / total:.1f}%)"
+            if prior is not None:
+                before = prior.get(k, 0)
+                entry += f" · periodo anterior: {before}"
+                if before and n >= 2 * before and n - before >= 5:
+                    entry += f" (×{n / before:.1f})"
+                elif not before and n >= 5:
+                    entry += " (sin antecedente)"
             base = (
                 units.get(k)
                 if units is not None
@@ -295,6 +312,22 @@ class QualityTools:
                 f"{total} de {overall} piezas del rango."
             )
         return ToolOutput("get_defect_summary", params, "\n".join(lines))
+
+    def _baseline(
+        self, expr: str, where: str, binds: dict, start: datetime, end: datetime
+    ) -> dict[str, int]:
+        """Piezas por grupo en el periodo anterior de la misma duración, con el mismo corte de detección."""
+        span = end - start
+        rows = self.conn.execute(
+            text(
+                f"SELECT {expr}, sum(e.quantity)::int FROM defect_event e "
+                "LEFT JOIN defect_family df ON df.id = e.defect_family_id "
+                "LEFT JOIN part p ON p.id = e.part_id "
+                f"WHERE {where} GROUP BY 1"
+            ),
+            {**binds, "s": start - span, "e": start},
+        ).all()
+        return {k: n for k, n in rows}
 
     def _production(
         self,
@@ -701,7 +734,6 @@ class QualityTools:
                 as_of=self.as_of,
                 kinds=CONTROL_KINDS,
                 exclude_sources=self.exclude_sources,
-                mode=self.controls_mode,
             ),
         )
 
