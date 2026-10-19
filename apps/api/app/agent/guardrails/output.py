@@ -54,11 +54,73 @@ _BLAME_HUMAN_ERROR = re.compile(
     r"\berror(?:es)?\s+(?:humano|del?\s+(?:operador|operadora|operario|tecnico|tecnica|personal|inspector|inspectora|mecanico))\b"
     r"|\b(?:operador|operadora|operario|tecnico|inspector)\s+(?:no\s+(?:siguio|cumplio|respeto)|se\s+equivoco|omitio)\b"
 )
-_CLOSING = re.compile(
-    r"\b(?:se\s+)?(?:cierra|cierro|cerramos|cerrar|cerro)\s+(?:el\s+|este\s+|la\s+)?(?:8d|ncr|caso|reporte)\b"
-    r"|\b(?:este|el)\s+(?:8d|ncr|caso)\s+(?:esta|queda|puede\s+darse\s+por)\s+cerrad[oa]\b"
-    r"|\bdar\s+por\s+cerrad[oa]\b"
+# Ampliado el 19 oct 2026 (ver docs/seguridad/promptfoo.md): sujeto humano + verbo de falta, y frases de responsabilidad.
+# Se excluye a propósito lo que describe al sistema ("no hay evidencia", "no cubre") y las menciones neutras de un rol.
+_ROLE = (
+    r"(?:operador(?:es|a|as)?|operario(?:s|a|as)?|tecnic[oa]s?|inspector(?:es|a|as)?|supervisor(?:es|a|as)?|"
+    r"ingenier[oa]s?|personal|trabajador(?:es|a|as)?|emplead[oa]s?|persona|gente|turno\s+\w+)"
 )
+_FAULT_VERB = (
+    r"(?:se\s+(?:confundio|equivoco|descuido|distrajo|durmio)|cometio|omitio|olvido|erro|fallo\s+al|desobedecio|incumplio|"
+    r"no\s+(?!hay\b|existe\b|define\b|cubre\b|menciona\b|incluye\b|indica\b|esta\b|estan\b|tiene\s+(?:registro|evidencia)|"
+    r"se\s+(?:registra|encontro|identifico|dispone)|ha\s+sido|fue\s+(?:programad|capacitad|informad)|especifica\b|contempla\b|"
+    r"aparece\b|consta\b|requiere\b|detecta\b|puede\b|cuenta\b|cuentan\b|dispone\b|disponen\b|tiene\b|tienen\b)\w+|"
+    r"permitio\s+(?:el|la|que)\s+\w+)"
+)
+_BLAME_PEOPLE = re.compile(
+    r"\b" + _ROLE + r"\s+(?:\w+\s+){0,5}?" + _FAULT_VERB + r"\b"
+    r"|\b(?:fue|es|era|son|fueron)\s+(?:el|la|los|las)\s+responsables?\b|\bresponsables?\s+de\s+no\b"
+    r"|\bresponsable\s+fue\s+(?:el|la)\b"
+    r"|\b(?:responsabilidad|culpa)\s+recae\b"
+    r"|\bmala\s+decision\s+d(?:el|e)\b"
+    r"|\bactitud\s+(?:poco|negativ|irrespons|descuidad)\w*"
+    r"|\b(?:falta\s+de|poca|poco)\s+(?:atencion|cuidado|compromiso|disciplina)\b"
+    r"|\bllamar(?:le)?\s+(?:la\s+)?atencion\s+(?:al|a\s+la)\b|\bimputable\s+al\b"
+    r"|\bquien(?:es)?\s+(?:\w+\s+){0,4}?(?:se\s+equivoco|cometio|fallo)\b"
+    r"|\bpoco\s+(?:cuidados|profesional|atent|comprometid)\w*"
+    r"|\bsancion(?:ar|es|ado)\b.{0,40}\b" + _ROLE + r"\b"
+    r"|\berror\s+d[el]\s+(?:la\s+)?persona\b"
+)
+_CLOSING = re.compile(
+    r"\b(?:se\s+)?(?:cierra|cierro|cerramos|cerro)\s+(?:el\s+|este\s+|la\s+)?(?:8d|ncr|caso|reporte)\b"
+    r"|\b(?:8d|ncr|caso|reporte)\s+(?:\w+\s+){0,2}?(?:esta|queda|quedo)\s+(?:como\s+)?(?:cerrad|aprobad|resuelt|concluid|finalizad)\w*"
+    r"|\b(?:dar|doy|damos|da|dare|daria)\s+por\s+(?:cerrad|concluid|resuelt|finalizad|terminad)\w*"
+    r"|\bcaso\s+cerrado\b|\bestado\s+final\s*:?\s*(?:cerrad|aprobad)"
+    r"|\b(?:se\s+aprueba|apruebo|autorizo|autorizamos|se\s+autoriza)\s+(?:el\s+)?(?:cierre|8d|ncr)\b"
+    r"|\b(?:8d|ncr)(?!-)\s+(?:\w+\s+){0,2}?cerrad[oa]\b"
+    r"|\b(?:8d|ncr|reporte|caso)\s+se\s+(?:considera|da)\s+(?:por\s+)?(?:cerrad|terminad|finalizad|concluid)\w*"
+    r"|\bcierre\s+(?:del\s+)?(?:8d|ncr|caso)\s*:?\s*aprobad"
+    r"|\b(?:marco|marcar|marcado|marcamos)\s+(?:el\s+|este\s+)?(?:8d|ncr|caso)\s+como\s+(?:resuelt|cerrad|concluid|aprobad)"
+    r"|\b(?:puede\s+)?considerarse\s+(?:finalizad|cerrad|concluid|resuelt)\w*"
+)
+# "cerrar el 8D" solo es una orden de cierre si no es procedimiento ("antes de cerrar", "para cerrar", "sin cerrar").
+_CLOSE_INFINITIVE = re.compile(r"(?<![\w])(?:cerrar|cerrarlo)\s+(?:el\s+|este\s+|la\s+)?(?:8d|ncr|caso|reporte)\b")
+_PROCEDURAL = re.compile(
+    r"(?:antes\s+de|para|hasta|sin|al|de|no|puede|debe|deberia|podra|requiere|necesita|permite|y\s+luego|despues\s+de)\s+$"
+)
+
+
+def _closes(folded: str) -> bool:
+    if _CLOSING.search(folded):
+        return True
+    return any(
+        not _PROCEDURAL.search(folded[max(0, m.start() - 22) : m.start()])
+        for m in _CLOSE_INFINITIVE.finditer(folded)
+    )
+
+
+# Una negación de evidencia antes del sujeto ("no se encontraron datos que indiquen que el personal incumplió") describe una
+# ausencia de dato, no una atribución.
+_NEGATED_EVIDENCE = re.compile(
+    r"(?:ningun[ao]s?\s+(?:\w+\s+){0,2}indica|no\s+se\s+encontr\w+|no\s+hay\s+(?:evidencia|datos)|sin\s+evidencia|no\s+existe\s+evidencia)"
+)
+
+
+def _blames_people(folded: str) -> bool:
+    return any(
+        not _NEGATED_EVIDENCE.search(folded[max(0, m.start() - 90) : m.start()])
+        for m in _BLAME_PEOPLE.finditer(folded)
+    )
 
 
 def check_blame(texts: Iterable[str]) -> list[Violation]:
@@ -72,7 +134,7 @@ def check_blame(texts: Iterable[str]) -> list[Violation]:
                     "El texto nombra a una persona; describe el sistema, no a individuos.",
                 )
             )
-        if _BLAME_WORDS.search(folded) or _BLAME_HUMAN_ERROR.search(folded):
+        if _BLAME_WORDS.search(folded) or _BLAME_HUMAN_ERROR.search(folded) or _blames_people(folded):
             out.append(
                 Violation(
                     "culpa_a_personas",
@@ -84,7 +146,7 @@ def check_blame(texts: Iterable[str]) -> list[Violation]:
 
 
 def check_closing(texts: Iterable[str]) -> list[Violation]:
-    if any(_CLOSING.search(fold(t)) for t in texts):
+    if any(_closes(fold(t)) for t in texts):
         return [
             Violation(
                 "cierra_8d",
