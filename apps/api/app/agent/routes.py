@@ -16,7 +16,7 @@ from app.agent.graph import AgentDeps
 from app.agent.service import ANALYZE_ROLES, AnalysisResult, AnalysisService
 from app.core.db import get_conn, get_engine
 from app.core.errors import AppError
-from app.modules.auth.deps import current_user, require_role
+from app.modules.auth.deps import current_user, require_role, require_role_released
 from app.modules.auth.models import CurrentUser
 from app.modules.ncr.service import NcrService
 
@@ -37,6 +37,8 @@ class AnalyzeIn(BaseModel):
 
     disciplines: list[Literal["D2", "D4"]] | None = None
     """Sin esto, todas las que se puedan generar."""
+    agent_instructions: str | None = Field(default=None, max_length=1000)
+    """Indicaciones opcionales del ingeniero para guiar al agente en esta corrida."""
 
 
 class AnalyzeOut(BaseModel):
@@ -97,8 +99,11 @@ async def get_analysis_service(request: Request) -> AnalysisService:
             ) as exc:  # configuración inválida del LLM, base caída, modelo ausente
                 # Sin esto el 503 no deja rastro en los logs y la causa real se pierde.
                 log.exception("No se pudo construir el runtime del agente")
+                # Para ModuleNotFoundError el nombre del módulo es lo que permite arreglarlo
+                # (p. ej. `langfuse` si TRACE_EXPORTER=langfuse y la imagen no trae el grupo).
+                missing = f": {exc.name}" if isinstance(exc, ModuleNotFoundError) and exc.name else ""
                 raise AgentUnavailable(
-                    f"El agente no está configurado ({type(exc).__name__})"
+                    f"El agente no está configurado ({type(exc).__name__}{missing})"
                 ) from exc
             request.app.state.agent_deps = deps
             service = request.app.state.analysis = AnalysisService(deps)
@@ -112,13 +117,18 @@ async def analyze(
     idempotency_key: str | None = Header(
         default=None, alias="Idempotency-Key", min_length=8, max_length=200
     ),
-    user: CurrentUser = Depends(require_role(*ANALYZE_ROLES)),
+    # Sin `get_conn`: la conexion de autenticacion no debe seguir tomada durante minutos de analisis.
+    user: CurrentUser = Depends(require_role_released(*ANALYZE_ROLES)),
     service: AnalysisService = Depends(get_analysis_service),
 ) -> AnalyzeOut:
     disciplines = tuple(body.disciplines) if body and body.disciplines else None
     return AnalyzeOut.from_result(
         await service.analyze(
-            user, ncr_id, disciplines=disciplines, idempotency_key=idempotency_key
+            user,
+            ncr_id,
+            disciplines=disciplines,
+            idempotency_key=idempotency_key,
+            agent_instructions=body.agent_instructions if body else None,
         )
     )
 
@@ -138,6 +148,8 @@ class RunOut(BaseModel):
     error: str | None
     config_id: str | None
     manifest: dict[str, Any]
+    agent_instructions: str | None = None
+    """Indicaciones que el ingeniero le dio al agente en esta corrida, si las hubo."""
 
     @classmethod
     def from_row(cls, r: runs.RunRow) -> RunOut:
@@ -157,17 +169,18 @@ class RunOut(BaseModel):
             error=o.get("error"),
             config_id=r.manifest.get("config_id"),
             manifest=r.manifest,
+            agent_instructions=o.get("agent_instructions"),
         )
 
 
 @router.get("/{ncr_id}/runs", response_model=list[RunOut])
 def list_runs(
     ncr_id: UUID,
-    user: CurrentUser = Depends(current_user),
+    user: CurrentUser = Depends(require_role("ingeniero", "gerente", "auditor")),
     conn=Depends(get_conn),
 ) -> list[RunOut]:
     """Corridas del agente sobre la NCR: estado, tiempos por etapa, costo y configuración.
-    Lectura para todo rol con alcance sobre la NCR (el auditor incluido)."""
+    Lectura restringida a ingeniero, gerente y auditor (excluye al inspector de piso)."""
     NcrService(conn).get(user, ncr_id)  # 404 si no tiene alcance
     return [RunOut.from_row(r) for r in runs.list_for_ncr(conn, ncr_id)]
 
@@ -204,7 +217,22 @@ class AuditEntryOut(BaseModel):
     """Primeros 12 hex del hash encadenado de la fila."""
 
 
+class ActivityOut(BaseModel):
+    """Acción humana o de agente sobre la NCR: quién, qué y cuándo (de ncr, section_version y analysis_run)."""
+
+    at: str
+    kind: str
+    """ncr_abierta, analisis_solicitado, borrador_agente, edicion, rechazo, aprobacion."""
+    actor: str | None
+    actor_role: str | None
+    discipline: str | None = None
+    version_no: int | None = None
+    detail: str | None = None
+    reason: str | None = None
+
+
 class AuditOut(BaseModel):
+    activity: list[ActivityOut] = []
     chain_ok: bool
     """La cadena de hashes de TODO el log está íntegra (audit_verify)."""
     chain_checked: int
@@ -220,14 +248,30 @@ _AUDIT_SQL = (
 )
 
 
+_ACTIVITY_SQL = (
+    "SELECT n.created_at AS at, 'ncr_abierta' AS kind, u.username AS actor, u.role::text AS role, "
+    "NULL::text AS discipline, NULL::int AS version_no, NULL::text AS detail, NULL::text AS reason "
+    "FROM ncr n JOIN app_user u ON u.id = n.opened_by WHERE n.id = :n "
+    "UNION ALL "
+    "SELECT r.started_at, 'analisis_solicitado', u.username, u.role::text, NULL, NULL, "
+    "array_to_string(r.disciplines, ',') || ' · ' || r.status::text, NULL "
+    "FROM analysis_run r JOIN app_user u ON u.id = r.requested_by WHERE r.ncr_id = :n "
+    "UNION ALL "
+    "SELECT s.created_at, CASE s.kind::text WHEN 'agente' THEN 'borrador_agente' ELSE s.kind::text END, "
+    "u.username, u.role::text, s.discipline::text, s.version_no, s.feedback, s.feedback_reason "
+    "FROM section_version s LEFT JOIN app_user u ON u.id = s.author_id WHERE s.ncr_id = :n "
+    "ORDER BY 1 DESC"
+)
+
+
 @router.get("/{ncr_id}/audit", response_model=AuditOut)
 def list_audit(
     ncr_id: UUID,
-    user: CurrentUser = Depends(current_user),
+    user: CurrentUser = Depends(require_role("ingeniero", "gerente", "auditor")),
     conn=Depends(get_conn),
 ) -> AuditOut:
     """Llamadas al modelo sobre la NCR y estado de la cadena de auditoría.
-    Lectura para todo rol con alcance sobre la NCR; no expone prompts ni respuestas."""
+    Lectura restringida a ingeniero, gerente y auditor (excluye al inspector de piso)."""
     from sqlalchemy import text
 
     NcrService(conn).get(user, ncr_id)  # 404 si no tiene alcance
@@ -273,7 +317,21 @@ def list_audit(
                 hash=r["hash"][:12],
             )
         )
+    activity = [
+        ActivityOut(
+            at=a["at"].isoformat(),
+            kind=a["kind"],
+            actor=a["actor"],
+            actor_role=a["role"],
+            discipline=a["discipline"],
+            version_no=a["version_no"],
+            detail=a["detail"],
+            reason=a["reason"],
+        )
+        for a in conn.execute(text(_ACTIVITY_SQL), {"n": ncr_id}).mappings().all()
+    ]
     return AuditOut(
+        activity=activity,
         chain_ok=not broken,
         chain_checked=checked,
         head_hash=tail.head_hash if tail is not None else None,
