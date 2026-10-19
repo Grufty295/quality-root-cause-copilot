@@ -1,0 +1,60 @@
+# Cambio de modelo o de prompt con efecto en calidad: corrida REAL, a mano. Gasta tokens (~US$0.15 el humo).
+# Necesita el secreto OPENROUTER_API_KEY y las variables LLM_MODEL, LLM_PRICE_IN, LLM_PRICE_OUT. No corre en PR para no pagar por cada push.
+# SIN PROBAR: escrito contra los comandos del Makefile; ajusta variables LLM_* a tu .env.example.
+name: evals-live
+
+on:
+  workflow_dispatch:
+    inputs:
+      casos:
+        description: "Casos separados por coma"
+        default: "EV-01,EV-05,EV-09"
+
+permissions:
+  contents: read
+
+jobs:
+  humo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults: { run: { working-directory: apps/api } }
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: eightd }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
+    env:
+      PGPASSWORD: ci
+      DATABASE_URL: postgresql+psycopg://postgres:ci@localhost:5432/eightd
+      LLM_ALLOW_SIMULATED_LOCAL: "true"
+      LLM_LOCAL__SIMULATED: "true"
+      LLM_LOCAL__BASE_URL: https://openrouter.ai/api/v1
+      LLM_LOCAL__API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      LLM_LOCAL__PROVIDER_LABEL: openrouter-simula-local
+      LLM_LOCAL__MODEL_SMALL: ${{ vars.LLM_MODEL }}
+      LLM_LOCAL__MODEL_LARGE: ${{ vars.LLM_MODEL }}
+      LLM_LOCAL__TIMEOUT_S: "180"
+      LLM_LOCAL__PRICE_IN_PER_MTOK: ${{ vars.LLM_PRICE_IN }}
+      LLM_LOCAL__PRICE_OUT_PER_MTOK: ${{ vars.LLM_PRICE_OUT }}
+      LLM_LOCAL__EXTRA_BODY: '{"provider":{"data_collection":"deny"}}'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: { enable-cache: true }
+      - run: uv sync --group dev
+      - name: Migraciones
+        run: |
+          for f in $(ls db/migrations/sql/*.sql | sort); do
+            psql -q -v ON_ERROR_STOP=1 -h localhost -U postgres -d eightd -f "$f"
+          done
+      - name: Seed (descarga el modelo de embeddings)
+        run: uv run python -m app.seed
+      - name: Eval del agente
+        run: uv run python -m app.evalkit.agent --name ci-humo --casos "${{ inputs.casos }}" --variants base --repeats 1 --concurrency 3 --out-dir "${{ github.workspace }}/reporte"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reporte-eval
+          path: reporte/
